@@ -8,7 +8,7 @@
     \ has a Runner installed or PAOP | \n|Bash script relies on OpenSSL Client | \n\
     |Linux tested | \n\n**Distribution**\n\n`Supplied as-is for reference. No implied\
     \ functionality or support for this example.`"
-  executionEnabled: false
+  executionEnabled: true
   group: 🔒 Security Tasks 🔒
   id: 61fa7200-23a9-45c7-b9cd-1a95a3d85012
   loglevel: INFO
@@ -16,6 +16,10 @@
   nodeFilterEditable: false
   plugins:
     ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
   scheduleEnabled: true
   schedules: []
   sequence:
