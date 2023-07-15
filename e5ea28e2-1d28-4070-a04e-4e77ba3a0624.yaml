@@ -1,0 +1,34 @@
+- defaultTab: nodes
+  description: "To be considered for addition to the job Catalog, please follow the\
+    \ guidelines for documentation - Description here \n# Title\nWritten by:\n\nAdd\
+    \ a brief job description here\n\n| Title| Data | \n| --- | --- | \n| Target Platform:|\
+    \ **OSS,PAOP,RBA** |\n|![AWS](https://visioguy.github.io/IconSets/aws/icons/aws_cloud.png)\
+    \ | Add Graphics if necessary. |\n\n|Assumptions:|\n| --- | \n| RBA has a Runner\
+    \ installed or PAOP | \n| Terraform Installed | \n| Python Installed | \n\n**Distribution**\n\
+    \n`Supplied as-is for reference. No implied functionality or support for this\
+    \ example.`\n"
+  executionEnabled: false
+  group: _Templates_
+  id: e5ea28e2-1d28-4070-a04e-4e77ba3a0624
+  loglevel: INFO
+  name: TemplateJob Markdown
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      # Title
+      Add clear description of usage for Option and any restrictions/expected format.
+    label: option1
+    name: documentme
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Steps should be clearly Labelled and documented
+      exec: echo "template"
+    keepgoing: false
+    strategy: node-first
+  tags: addtag
+  uuid: e5ea28e2-1d28-4070-a04e-4e77ba3a0624
+

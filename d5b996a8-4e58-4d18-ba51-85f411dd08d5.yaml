@@ -1,0 +1,173 @@
+- defaultTab: nodes
+  description: "-\n# Grab Screenshot, Post to S3, Update custom fields in Incident\n\
+    Written by: Justyn Roberts\n\nExperimental job that could be potentially used\
+    \ in the event of a site failure or problem page or GUI.\n- Python script to run\
+    \ a selenium (headless chrome) session to a site grab a screenshot\n- Convert\
+    \ to Jpg\n- Upload to S3 Bucket\n- Write note to PD incident\n- Update custom\
+    \ Incident field with custom URL\n\nThere are many things that can be built on\
+    \ here, but this is to serve as a reference for future projects.\n\n| Title| Data\
+    \ | \n| --- | --- | \n| Target Platform:| **OSS,PAOP,RBA** |\n\n|Assumptions:|\n\
+    | --- | \n| RBA has a Runner installed or PAOP | \n| Python Installed | \n| pip\
+    \ install boto3 selenium pillow | \n|you will also need headless chrome installed|\n\
+    |Options|\n| --- |\n|AWS KEY - AWS Iam Key|\n|AWS Secret - AWS Iam Secret|\n|AWS\
+    \ Region|\n|S3 Bucket ID |\n| --- |\n|URL (Could be passed from Incident)|\n|Incident\
+    \ ID (Passed from Incident)|\n|Custom Field (preconfigured in PD) |\n| --- |\n\
+    \nNote:\nThere are some potential improvements. \nAt the moment you have to download\
+    \ the jpg file to view it.\nIf you added a SSL site, you could view the files\
+    \ in the browser.\n\n\n\n`Supplied as-is for reference. No implied functionality\
+    \ or support for this example.`"
+  executionEnabled: false
+  group: 🩻 Diagnostics 🩻
+  id: d5b996a8-4e58-4d18-ba51-85f411dd08d5
+  loglevel: INFO
+  name: 'Website Screenshot, S3 Storage to Custom Incident'
+  nodeFilterEditable: false
+  options:
+  - description: Select the region for the S3 Storage Bucket
+    enforced: true
+    label: Select AWS Region
+    name: region
+    optionValuesPluginType: aws-regions-job-options
+    value: eu-west-2
+  - description: Select the AWS IAM Key for an account with the rights to write to
+      the S3 Bucket
+    hidden: true
+    label: AWS Key
+    name: awskey
+    secure: true
+    storagePath: keys/project/pdt-emea-production/JR_AWS_KEY
+    valueExposed: true
+  - description: Select the AWS Secret for an account with the rights to write to
+      the S3 Bucket
+    hidden: true
+    label: AWS Secret
+    name: awssecret
+    secure: true
+    storagePath: keys/project/pdt-emea-production/JR_AWS_SECRET
+    valueExposed: true
+  - description: An existing created S3 Bucket that can be used for storing screenshots
+    label: S3 Bucket Name
+    name: bucket
+    value: justyn-storage
+  - description: |-
+      The URL to connect to and Screenshot
+
+      Format:
+      https://news.ycombinator.com/
+    label: URL To Check
+    name: url
+    value: https://news.ycombinator.com/
+  - description: 'Ordinarily passed across as part of the Automation Actions Payload,
+      the Incident ID is the key to updating an existing incident'
+    label: Pagerduty Incident ID
+    name: pd_incident_id
+  - description: Valid Key For PagerDuty
+    hidden: true
+    label: Pagerduty API Key
+    name: PD_API_KEY
+    secure: true
+    storagePath: keys/PDT-EMEA-INCIDENT
+    valueExposed: true
+  - description: Incident Response Custom Field name eg Snapshot_url
+    label: Custom Field
+    name: custom_field
+    value: screenshot_url
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Grab Screenshot & Upload to S3 Bucket
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: file_url
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        #!/usr/bin/python3
+        import boto3
+        from selenium import webdriver
+        from selenium.webdriver.chrome.options import Options
+        from PIL import Image
+
+
+        filename = "@job.execid@"
+        bucket = "@option.bucket@"
+        url = "@option.url@"
+        region = "@option.region@"
+
+        #obfuscate
+        key_id = "@option.awskey@"
+        access_key = "@option.awssecret@"
+        #obfuscate
+
+        # Set chrome options to run in headless mode
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--start-maximized')
+        chrome_options.add_argument("--kiosk")
+
+        # Initialize the webdriver
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.set_window_position(0, 0)
+        driver.set_window_size(1920, 1080)
+
+        print ("Getting Screenshot...")
+        # Navigate to a webpage
+        driver.get(url)
+        # Capture a screenshot and save to a file
+        driver.save_screenshot(filename+ ".png")
+        # open the saved PNG image using Pillow
+        image = Image.open(filename + ".png")
+        image.convert("RGB").save(filename + ".jpg")
+        print ("Upload Screenshot...")
+
+        # Upload the file to S3
+        s3 = boto3.client('s3',aws_access_key_id = key_id,aws_secret_access_key = access_key)
+        with open(filename +".jpg", 'rb') as f:
+            s3.upload_fileobj(f, bucket,'screenshots/'+ filename +".jpg")
+        print("Done...")
+        # Quit the webdriver
+        driver.quit()
+        print ("Closing...")
+        print ("URL = http://"+ bucket +".s3-website."+ region +".amazonaws.com/screenshots/"+ filename +".jpg")
+    - configuration:
+        api_token: keys/PDT-EMEA-INCIDENT
+        email: jroberts@pagerduty.com
+        incident_id: ${option.pd_incident_id}
+        note: Added Screenshot  📺  to custom field (Screenshot_url) 📺
+      description: Add Screenshot Note
+      nodeStep: false
+      type: pd-note-step
+    - configuration:
+        authentication: None
+        body: "{\n\t\"field_values\": [\n\t\t{\n\t\t\t\"name\": \"${option.custom_field}\"\
+          ,\n\t\t\t\"value\": \"${data.URL}\"\n\t\t}\n\t]\n}"
+        checkResponseCode: 'false'
+        headers: |-
+          {
+              "X-EARLY-ACCESS": "flex-service-early-access",
+              "Content-Type": "application/json",
+              "Authorization": "Token token=${option.PD_API_KEY}"
+          }
+        method: PUT
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://api.pagerduty.com/incidents/${option.pd_incident_id}/field_values
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Update Custom Fields using API
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: d5b996a8-4e58-4d18-ba51-85f411dd08d5
+

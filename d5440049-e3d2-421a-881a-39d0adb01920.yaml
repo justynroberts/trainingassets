@@ -1,0 +1,36 @@
+- defaultTab: nodes
+  description: |-
+    > Because even the longest journey starts with a single step
+
+    **Description:**
+    This job is the most basic you can possibly run :-
+    A single step, to run the `whoami` command <br>
+    **Assumptions:**
+
+     - RBA with Runner Installed OR Self Hosted (PAOP)
+     - Linux/Windows compatible
+
+    **Documentation:** Not Applicable
+  executionEnabled: true
+  group: 👣 Your First Steps in Automation 👣
+  id: d5440049-e3d2-421a-881a-39d0adb01920
+  loglevel: INFO
+  name: 1. First Command
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Run a single command
+      exec: whoami
+    keepgoing: false
+    strategy: node-first
+  tags: first_steps
+  uuid: d5440049-e3d2-421a-881a-39d0adb01920
+

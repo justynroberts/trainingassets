@@ -1,0 +1,105 @@
+- defaultTab: output
+  description: "# Cascading option example\nWritten by: JP\n\nAfter running the populate\
+    \ option once (creating the options files locally),you can edit the job, remove\
+    \ the script, the populate option and the ruleset.\n\n|Assumptions:|\n| --- |\
+    \ \n| RBA has a Runner installed or PAOP | \n\n**Distribution**\n\n`Supplied as-is\
+    \ for reference. No implied functionality or support for this example.`\n"
+  executionEnabled: false
+  group: ⚙️ Misc Scripts ⚙️
+  id: eaafc08f-7f35-4354-988f-0edde79928f5
+  loglevel: INFO
+  name: Cascading option Example
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      As part of the example, this option allows to populate the cascading options.
+      Enter "yes" if "Failed loading remote option values" message appears in below options.
+    label: Set as "yes" the first time running the job!
+    name: populate
+    required: true
+    value: 'no'
+    values:
+    - 'no'
+    - 'yes'
+    valuesListDelimiter: ','
+  - enforced: true
+    name: vm
+    valuesUrl: file:/home/rundeck/dynamic_options/vm
+  - enforced: true
+    name: distro
+    valuesUrl: file:/home/rundeck/dynamic_options/${option.vm.value}
+  - enforced: true
+    name: version
+    valuesUrl: file:/home/rundeck/dynamic_options/${option.distro.value}
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - script: |-
+        mkdir dynamic_options
+        path=./dynamic_options
+        echo '[
+           {"name":"Linux", "value":"linux"},
+           {"name":"Windows",  "value":"windows"}
+        ]'>$path/vm
+        echo '[
+            {"name":"Fedora", "value":"fedora"},
+            {"name":"Ubuntu",  "value":"ubuntu"}
+        ]'>$path/linux
+        echo '[
+            {"name":"v27","value":"27"},
+            {"name":"v28", "value":"28"},
+            {"name":"v29", "value":"29"}
+        ]'>$path/fedora
+        echo '[
+            {"name":"16.04","value":"16.04"},
+            {"name":"17.10", "value":"17.10"},
+            {"name":"18.10", "value":"18.10"}
+        ]'>$path/ubuntu
+        echo '[
+            {"name":"WindowsDesk", "value":"windsk"},
+            {"name":"WindowsSrv",  "value":"winsrv"}
+        ]'>$path/windows
+        echo '[
+            {"name":"Windows 10 Home","value":"win10home"},
+            {"name":"Windows 10 Pro", "value":"win10pro"},
+            {"name":"Windows 10 Ultimate", "value":"win10ult"}
+        ]'>$path/windsk
+        echo '[
+            {"name":"Windows 2016 Core","value":"win2k16core"},
+            {"name":"Windows 2016 Pro", "value":"win2k16pro"}
+        ]'>$path/winsrv
+    - exec: 'echo "Dynamic options have been \(or are already\) populated, you can
+        go the \<a href="$RD_JOB_SERVERURL/project/$RD_JOB_PROJECT/job/show/a8912eff-eb94-40d6-8685-017d96054296"\>job\</a\>
+        and run it again to see proper options."'
+      plugins:
+        LogFilter:
+        - config:
+            datatype: text/html
+            sanitizeHtml: 'true'
+            striped: 'false'
+          type: render-datatype
+    - exec: echo $RD_OPTION_VM
+    - exec: echo ${option.distro}
+    - exec: echo $RD_OPTION_VERSION
+    keepgoing: false
+    pluginConfig:
+      LogFilter:
+      - config:
+          loglevel: verbose
+          matchLoglevel: warn
+          quietMatch: 'true'
+          regex: ^\[wf.*
+        type: quiet-output
+      WorkflowStrategy:
+        ruleset:
+          rules: |-
+            [*] run-in-sequence
+            [1,2] if:option.populate==yes
+            [3,4,5] if:option.populate==no
+    strategy: ruleset
+  tags: 'general,options'
+  uuid: eaafc08f-7f35-4354-988f-0edde79928f5
+

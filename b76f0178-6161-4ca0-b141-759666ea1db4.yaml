@@ -1,0 +1,101 @@
+- defaultTab: nodes
+  description: " Runner Availability Monitoring\nWritten by: Justyn Roberts  \nA sample\
+    \ job that will use the Process Automation REST API to check the healthcheck status\
+    \ on a predetermined list of runners.  \nUpon failure, the error will be collected,\
+    \ the job failed, and potentially a PagerDuty Event raised.  \nThe script is quite\
+    \ configurable.  \n\n| Title| Data | \n| --- | --- | \n| Target Platform:| **OSS,PAOP,RBA**\
+    \ |\n\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed or PAOP | \n|\
+    \ Python Installed with Module (`pip install requests`) | \n| Requires Process\
+    \ Automation Key stored in accessible keystore | \n\n**Distribution**\n\n`Supplied\
+    \ as-is for reference. No implied functionality or support for this example.`"
+  executionEnabled: false
+  group: ⛑️ System Utilities ⛑️
+  id: b76f0178-6161-4ca0-b141-759666ea1db4
+  loglevel: INFO
+  name: Runner Healthcheck
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      You will need a Process Automation API key to access the Runner Configuration
+      This should be stored in a keystore, and will be referenced here
+    label: Process Automation API Key
+    name: apikey
+    secure: true
+    storagePath: keys/project/YOURKEY
+    valueExposed: true
+  - description: "Add a comma separated list of runners to monitor.  \nThis allows\
+      \ for non production or temporary runners to be ignored. \n\n    Example:\n\
+      \    myrunner1,myrunner2,myrunner3\n\nIf for any reason you need to change the\
+      \ delimiter, the python can be easily modified"
+    label: Monitored Runners List
+    name: runnerlist
+    value: 'Runner1,Runner2'
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Check Script (python)
+      errorhandler:
+        exec: 'echo "Error Handler, Add PagerDuty event if necessary.Output stored
+          as data.result"'
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: result
+            regex: ^Result:(.*)$
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |
+        #!/bin/python3
+        # -*- coding: utf-8 -*-
+        # Process Automation - Monitor Runner Availability
+        runners = "@option.runnerlist@"
+        token = "@option.apikey@"
+        delimiter = ","
+
+        # Requires Python, with Requests module included (pip install requests)
+        import requests
+        import sys
+        url = "https://rdse.runbook.pagerduty.cloud/api/41/runnerManagement/runners"
+        payload = ""
+        headers = {
+            "X-Rundeck-Auth-Token": token,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        }
+        response = requests.request("GET", url, data=payload, headers=headers)
+        json_data = response.json()
+        result = True
+        #Convert to lowercase, just to make the value checks a little more fuzzy
+        list = runners.split(delimiter)
+        runner_list = [x.lower() for x in list]
+        failed_list = []
+        print ("Checking " + runners)
+        for runner in json_data["runners"]:
+            try:
+                name = runner["name"]
+                lastcheckin = runner["lastCheckin"]
+                status = runner["status"]
+                projects = runner["associatedProjects"]
+            except:
+             pass
+            if name.lower() in runner_list:
+                if status=="Healthy":
+                    print (name + " ✔️  Last Check in : "+lastcheckin )
+                if status=="Down":
+                    result=False
+                    print (name + "❌ Last Check in : "+lastcheckin )
+                    failed_list.append(name + " Is not running")
+        if not result:
+            failed = ', '.join(map(str, failed_list))
+            print ("Result: Runner: " + failed)
+            sys.exit(1)
+    keepgoing: false
+    strategy: node-first
+  tags: healthcheck
+  uuid: b76f0178-6161-4ca0-b141-759666ea1db4
+

@@ -1,0 +1,87 @@
+- defaultTab: nodes
+  description: "# Slack Channel creation from incidentID\nWritten by: (Anonymous!)\n\
+    \nA great example of \n\n- Conversion of incident ID to lower case and creation\
+    \ of channel\n- Creating a slack channel from an incident.\n- posting of data\
+    \ from Process Automation, \n\n| Title| Data | \n| --- | --- | \n| Target Platform:|\
+    \ **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed\
+    \ or PAOP | \n| Access to Slack API Key| \n| Access to Slack Via Webhooks | \n\
+    \n**Distribution**\n\n`Supplied as-is for reference. No implied functionality\
+    \ or support for this example.`"
+  executionEnabled: false
+  group: 🙊 Chat Ops 🙊
+  id: 991161a7-d706-4682-a84d-dcf5e3b51819
+  loglevel: INFO
+  multipleExecutions: true
+  name: Slack - Incident ID Creation
+  nodeFilterEditable: false
+  options:
+  - label: pd_incident_id
+    name: pd_incident_id
+  - description: Slack Bearer API token for Channel Creation
+    label: Bearer Token
+    name: bearertoken
+  - description: Slack Webhook
+    label: Slack Webhook
+    name: slackwebhook
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'false'
+            name: name
+            regex: ^(.+)
+          type: key-value-data
+      script: |+
+        echo "$RD_OPTION_PD_INCIDENT_ID" |tr [[:upper:]] [[:lower:]];
+
+    - configuration:
+        authentication: None
+        body: |-
+          {
+          "name" : "${data.name*}",
+           "is_private" : false,
+           "is_shared": true,
+          }
+        checkResponseCode: 'true'
+        headers: |-
+          Authorization:${option.bearertoken}
+          Content-Type: application/json;charset=utf-8
+        method: POST
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://slack.com/api/conversations.create
+        sslVerify: 'false'
+        timeout: '30000'
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    - configuration:
+        authentication: None
+        body: "{\n               \n            \"channel\": \"#${data.name*}\",\n\n\
+          \           \"username\": \"Rundeck\",\n            \"text\": \"This is\
+          \ a test from incidente ${option.pd_incident_id}\",\n          \n      \
+          \     \"icon_emoji\": \":rundeck2:\",\n\n          }"
+        checkResponseCode: 'false'
+        headers: 'Content-Type: application/json; charset=utf-8'
+        method: POST
+        printResponse: 'false'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://hooks.slack.com/services/${option.slackwebhook}
+        sslVerify: 'true'
+        timeout: '30000'
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  tags: slack
+  uuid: 991161a7-d706-4682-a84d-dcf5e3b51819
+

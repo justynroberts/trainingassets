@@ -1,0 +1,55 @@
+- defaultTab: nodes
+  description: |-
+    > Allow an existing script to be run via webhook,delegated to a human or scheduled
+
+    **Description:**
+    They could include
+    - UI (triggered by a person)
+    - Incident Triggered
+    - Webhook
+    - Scheduled
+
+    This contains a sample scheduled Job scheduled to run hourly on weekdays.Use the Schedule tab to modify the cron values:
+    (0 60 * ? * MON-FRI)
+
+    **Assumptions:**
+
+     - RBA with Runner Installed OR Self Hosted (PAOP)
+     - Linux Tested
+
+    **Documentation:** Not Applicable
+  executionEnabled: true
+  group: 👣 Your First Steps in Automation 👣
+  id: 1cf6491a-3f4c-4a46-9f80-98e15e1f7ed4
+  loglevel: INFO
+  name: 8. Scheduled Jobs
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  schedule:
+    month: '*'
+    time:
+      hour: '*'
+      minute: '30'
+      seconds: '0'
+    weekday:
+      day: MON-FRI
+    year: '*'
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Regular Scheduled Script
+      script: |-
+        # A Sample Script. Could be a security check, patch or regular data movement
+
+        echo "Regular Job Run"
+    keepgoing: false
+    strategy: node-first
+  tags: 'first_steps,scheduled'
+  uuid: 1cf6491a-3f4c-4a46-9f80-98e15e1f7ed4
+

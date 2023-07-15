@@ -1,0 +1,61 @@
+- defaultTab: nodes
+  description: "Post Payload to a Google Chat Environment\n# Google Chat Example\n\
+    Written by: Jroberts\n\nSimple payload post to post info to Google Chat\n\n| Title|\
+    \ Data | \n| --- | --- | \n| Target Platform:| **OSS,PAOP,RBA** |\n\n|Assumptions:|\n\
+    | --- | \n| RBA has a Runner installed or PAOP | \n\n- Open Google Chat in a web\
+    \ browser.\n- Go to the space to which you want to add a webhook.\n- At the top,\
+    \ next to space title, click arrow_drop_down Down Arrow > The icon for manage\
+    \ webhooks Manage webhooks.\n- If this space already has other webhooks, click\
+    \ Add another. Otherwise, skip this step.\n- For Name, enter \"Quickstart Webhook\"\
+    .\n- For Avatar URL, enter https://developers.google.com/chat/images/chat-product-icon.png.\n\
+    - Click SAVE.\n- Click content_copy Copy to copy the full webhook URL.\n- Click\
+    \ outside the box to close the Incoming webhooks dialog.\n\n\n**Distribution**\n\
+    \n`Supplied as-is for reference. No implied functionality or support for this\
+    \ example.`\n"
+  executionEnabled: false
+  group: 🙊 Chat Ops 🙊
+  id: 02a3b8ba-071a-4283-8ae5-3be62d4f6a8c
+  loglevel: INFO
+  name: Output data to Google Chat
+  nodeFilterEditable: false
+  options:
+  - label: Chat Subtitle
+    name: subtitle
+  - label: Webhook URL
+    name: webhook_url
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        body: |-
+          {
+                  'cards': [
+                      {
+                          'header': {
+                              'title': title,
+                              'subtitle': subtitle,
+                          },
+                          'sections': [{'widgets': [widget]}],
+                      }
+                  ]
+              }
+        checkResponseCode: 'false'
+        method: POST
+        printResponse: 'false'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://chat.googleapis.com/v1/spaces/AAAAvLqb9_U/messages?key=${option.key}I&token=${option.token}
+        sslVerify: 'true'
+        timeout: '30000'
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  tags: googlechat
+  uuid: 02a3b8ba-071a-4283-8ae5-3be62d4f6a8c
+

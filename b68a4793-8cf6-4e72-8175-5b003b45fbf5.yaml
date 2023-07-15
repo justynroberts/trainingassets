@@ -1,0 +1,166 @@
+- defaultTab: nodes
+  description: "# 10 Kubernetes Health checks\nWritten by: Justyn Roberts \n\nA flow\
+    \ of multiple steps with 10 different checks around resource and configuration\n\
+    Triggered with kubectl\n\n\n| Title| Data | \n| --- | --- | \n| Target Platform:|\
+    \ **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed\
+    \ or PAOP | \n| Kubectl Installed, with sufficient access | \n|jq installed|\n\
+    \n\n**Distribution**\n\n`Supplied as-is for reference. No implied functionality\
+    \ or support for this example.`\n"
+  executionEnabled: false
+  group: '🐳 K8''s Management 🐳 '
+  id: b68a4793-8cf6-4e72-8175-5b003b45fbf5
+  loglevel: INFO
+  name: Kubernetes Health Checks
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Checking Kubernetes API server health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking Kubernetes API server health..."
+
+        if kubectl version --short | grep -q "Server Version"; then
+            echo "✅ Kubernetes API server is healthy"
+        else
+            echo "❌ Kubernetes API server is not healthy"
+        fi
+    - description: Checking nodes availability...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking nodes availability..."
+
+        if [ "$(kubectl get nodes | grep -c 'Ready')" -gt 0 ]; then
+            echo "✅ All nodes are available"
+        else
+            echo "❌ Not all nodes are available"
+        fi
+    - description: Checking pod capacity...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking pod capacity..."
+
+        TOTAL_PODS=$(kubectl get nodes -o jsonpath='{.items[*].status.capacity.pods}' | tr ' ' '+')
+        USED_PODS=$(kubectl get pods --all-namespaces -o json | jq '.items | length')
+
+        if [ "$USED_PODS" -lt "$TOTAL_PODS" ]; then
+            echo "✅ Pod capacity is sufficient"
+        else
+            echo "❌ Pod capacity is insufficient"
+        fi
+    - description: Checking etcd health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking etcd health..."
+
+        ETCD_HEALTH=$(kubectl -n kube-system exec -it etcd-$(hostname) -- etcdctl endpoint health)
+
+        if [ "$ETCD_HEALTH" = "127.0.0.1:2379 is healthy" ]; then
+            echo "✅ Etcd is healthy"
+        else
+            echo "❌ Etcd is not healthy"
+        fi
+    - description: Checking kube-controller-manager health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking kube-controller-manager health..."
+
+        if kubectl -n kube-system get pods -l component=kube-controller-manager -o json | jq '.items | length' | grep -q "1"; then
+            echo "✅ Kube-controller-manager is healthy"
+        else
+            echo "❌ Kube-controller-manager is not healthy"
+        fi
+    - description: Checking kube-scheduler health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking kube-scheduler health..."
+
+        if kubectl -n kube-system get pods -l component=kube-scheduler -o json | jq '.items | length' | grep -q "1"; then
+            echo "✅ Kube-scheduler is healthy"
+        else
+            echo "❌ Kube-scheduler is not healthy"
+        fi
+    - description: Checking kube-proxy health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking kube-proxy health..."
+
+        if [ "$(kubectl -n kube-system get ds kube-proxy -o json | jq '.status.numberReady')" -gt 0 ]; then
+            echo "✅ Kube-proxy is healthy"
+        else
+            echo "❌ Kube-proxy is not healthy"
+        fi
+    - description: Checking CoreDNS health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking CoreDNS health..."
+
+        if [ "$(kubectl -n kube-system get deploy coredns -o json | jq '.status.availableReplicas')" -gt 0 ]; then
+            echo "✅ CoreDNS is healthy"
+        else
+            echo "❌ CoreDNS is not healthy"
+        fi
+    - description: Checking ingress controller health...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking ingress controller health..."
+
+        INGRESS_CONTROLLER=$(kubectl get pods --all-namespaces -l app.kubernetes.io/name=ingress-nginx -o json)
+        INGRESS_CONTROLLER_REPLICAS=$(echo "$INGRESS_CONTROLLER" | jq '.items | length')
+
+        if [ "$INGRESS_CONTROLLER_REPLICAS" -gt 0 ]; then
+            READY_REPLICAS=$(echo "$INGRESS_CONTROLLER" | jq '.items[].status.containerStatuses[] | select(.ready==true) | length')
+
+            if [ "$READY_REPLICAS" -eq "$INGRESS_CONTROLLER_REPLICAS" ]; then
+                echo "✅ Ingress controller is healthy"
+            else
+                echo "❌ Ingress controller is not healthy"
+            fi
+        else
+            echo "❌ Ingress controller not found"
+        fi
+    - description: Checking container resource limits...
+      script: |-
+        #!/bin/bash
+
+        echo "🔍 Checking container resource limits..."
+
+        LIMIT_ISSUE_FOUND=0
+
+        for namespace in $(kubectl get ns --no-headers -o custom-columns=":metadata.name")
+        do
+          for pod in $(kubectl get pods -n "$namespace" --no-headers -o custom-columns=":metadata.name")
+          do
+            CONTAINERS=$(kubectl get pod "$pod" -n "$namespace" -o json | jq '.spec.containers[].name' -r)
+            for container in $CONTAINERS
+            do
+              CPU_LIMIT=$(kubectl get pod "$pod" -n "$namespace" -o json | jq '.spec.containers[] | select(.name=="'"$container"'") | .resources.limits.cpu')
+              MEMORY_LIMIT=$(kubectl get pod "$pod" -n "$namespace" -o json | jq '.spec.containers[] | select(.name=="'"$container"'") | .resources.limits.memory')
+
+              if [ "$CPU_LIMIT" == "null" ] || [ "$MEMORY_LIMIT" == "null" ]; then
+                LIMIT_ISSUE_FOUND=1
+                echo "❌ Container '$container' in pod '$pod' in namespace '$namespace' is missing resource limits"
+              fi
+            done
+          done
+        done
+
+        if [ $LIMIT_ISSUE_FOUND -eq 0 ]; then
+          echo "✅ All containers have resource limits"
+        fi
+    keepgoing: false
+    strategy: node-first
+  uuid: b68a4793-8cf6-4e72-8175-5b003b45fbf5
+

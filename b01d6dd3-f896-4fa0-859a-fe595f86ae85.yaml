@@ -1,0 +1,79 @@
+- defaultTab: output
+  description: "Service check & restart \nWritten by: Chris Bell\n\nRolling Restart\
+    \ - takes service name and system restart parameter\n\nIncident is optional.\n\
+    \n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed or PAOP | \n| PD Key\
+    \ for Incident Update | \n| Linux Tested | \n\n**Distribution**\n\n`Supplied as-is\
+    \ for reference. No implied functionality or support for this example.`\n"
+  executionEnabled: false
+  group: 🏥 Response & Remediation 🏥
+  id: b01d6dd3-f896-4fa0-859a-fe595f86ae85
+  loglevel: INFO
+  name: Service and System Restart
+  nodeFilterEditable: false
+  options:
+  - description: The service name to be restarted.
+    label: Service Name
+    name: service_name
+    value: nginx
+  - description: Set to true to perform a full system restart instead of a service
+      restart.
+    label: Full System Restart
+    name: full_system_restart
+    value: 'false'
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Perform restart based on user choice
+      script: |-
+        #!/bin/bash
+
+        SERVICE_NAME="@option.service_name@"
+        FULL_SYSTEM_RESTART="@option.full_system_restart@"
+
+        if [ "$FULL_SYSTEM_RESTART" = "true" ]; then
+          sudo reboot
+        else
+          sudo systemctl restart "$SERVICE_NAME"
+        fi
+    - configuration:
+        host: ${node.name}
+        interval: '30'
+        maxtry: '4'
+      description: Wait for host to come online
+      nodeStep: true
+      type: nixy-waitfor-ping
+    - description: Wait for 30 seconds
+      script: sleep 60
+    - description: Verify service or node status
+      script: |-
+        #!/bin/bash
+
+        SERVICE_NAME="@option.service_name@"
+        FULL_SYSTEM_RESTART="@option.full_system_restart@"
+
+        if [ "$FULL_SYSTEM_RESTART" = "true" ]; then
+          for i in {1..10}; do
+            if ping -c 1 "$(hostname)" &> /dev/null; then
+              echo "Node is back online after system restart."
+              break
+            else
+              echo "Node is not back online yet, retrying in 30 seconds..."
+              sleep 30
+            fi
+          done
+        else
+          systemctl is-active --quiet "$SERVICE_NAME"
+          if [ $? -eq 0 ]; then
+            echo "✅ Service '$SERVICE_NAME' is running."
+          else
+            echo "❌ Service '$SERVICE_NAME' is not running."
+          fi
+        fi
+    keepgoing: false
+    strategy: node-first
+  tags: 'linux,remediation,response,services'
+  uuid: b01d6dd3-f896-4fa0-859a-fe595f86ae85
+

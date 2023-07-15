@@ -1,0 +1,125 @@
+- defaultTab: nodes
+  description: "\n15 Windows Powershell Tasks\nWritten by: Justyn Roberts\n\nA quick\
+    \ example of running PowerShell within Process Automation, and how you might execute\
+    \ powershell for additional diagnostics or remediation.\n\n\n| Title| Data | \n\
+    | --- | --- | \n| Target Platform:| **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n|\
+    \ --- | \n| RBA has a Runner installed or PAOP | \n| Windows Runner | \n\n\n\n\
+    **Distribution**\n\n`Supplied as-is for reference. No implied functionality or\
+    \ support for this example.`\n"
+  executionEnabled: false
+  group: 🩻 Diagnostics 🩻
+  id: d34fc1cb-052d-47b3-8af8-8000d164dabe
+  loglevel: INFO
+  name: Windows PowerShell - 15 Diagnostics Examples
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Get Installed Apps
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* |
+            Select-Object DisplayName, DisplayVersion, Publisher, InstallDate |
+            Sort-Object DisplayName
+      scriptInterpreter: powershell.exe -File
+    - description: Get IP Address
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: Get-NetIPAddress | Select-Object IPAddress
+      scriptInterpreter: powershell.exe
+    - description: Get Service Status
+      fileExtension: .ps1
+      script: |-
+        Get-Service | Select-Object DisplayName, Status |
+            Sort-Object DisplayName
+    - description: Get Disk Space
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-PSDrive C | Select-Object Used, Free, @{Name="PercentFree";Expression={"{0:P2}" -f ($_.Free / $_.Used)}} |
+            Format-List
+      scriptInterpreter: powershell.exe
+    - description: Get System Info
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-CimInstance Win32_ComputerSystem | Select-Object Name, Manufacturer, Model, NumberOfProcessors, TotalPhysicalMemory |
+            Format-List
+      scriptInterpreter: powershell.exe
+    - description: Get Event Logs
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-EventLog -LogName System -After (Get-Date).AddDays(-7) |
+            Select-Object EventID, EntryType, TimeGenerated, Source, Message |
+            Sort-Object TimeGenerated -Descending
+      scriptInterpreter: powershell.exe
+    - description: Get User Accounts
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-LocalUser | Select-Object Name, Description, Enabled |
+            Sort-Object Name
+      scriptInterpreter: powershell.exe
+    - description: Get Installed Updates
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-HotFix | Select-Object Description, InstalledOn |
+            Sort-Object InstalledOn -Descending
+      scriptInterpreter: powershell.exe
+    - description: Get Printer Info
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-Printer | Select-Object Name, DriverName, PortName |
+            Sort-Object Name
+      scriptInterpreter: powershell.exe
+    - description: Get File Attributes
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-ChildItem C:\Windows | Select-Object Name, CreationTime, LastWriteTime, Length |
+            Sort-Object LastWriteTime -Descending
+      scriptInterpreter: powershell.exe
+    - description: Get Network Shares
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Get-SmbShare -Name ShareName | Select-Object Name, Path, FullAccess, ChangeAccess |
+            Format-List
+      scriptInterpreter: powershell.exe
+    - description: Get website status
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        Measure-Command {Invoke-WebRequest -Uri "https://www.example.com" -UseBasicParsing} |
+            Select-Object TotalMilliseconds |
+            Format-List
+      scriptInterpreter: powershell.exe
+    - description: Full Diagnostics
+      fileExtension: .ps1
+      interpreterArgsQuoted: false
+      script: |-
+        $PSVersionTable
+
+        Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber, OSArchitecture, InstallDate, LastBootUpTime
+
+        Get-CimInstance Win32_Processor | Select-Object Name, NumberOfCores, MaxClockSpeed, AddressWidth
+
+        Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum |
+            Select-Object @{Name="TotalMemory";Expression={$_.Sum / 1GB}}
+
+        Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3} |
+            Select-Object DeviceID, MediaType, Size, FreeSpace, @{Name="PercentFree";Expression={"{0:P2}" -f ($_.FreeSpace / $_.Size)}} |
+            Sort-Object DeviceID
+      scriptInterpreter: powershell.exe
+    keepgoing: false
+    strategy: node-first
+  tags: 'powershell,windows'
+  uuid: d34fc1cb-052d-47b3-8af8-8000d164dabe
+

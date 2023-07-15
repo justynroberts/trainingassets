@@ -1,0 +1,88 @@
+- defaultTab: output
+  description: "Docker & Container Environment Check\nWritten by: Chris Bell\n\nCheck\
+    \ Docker Environment\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed\
+    \ or PAOP | \n| PD Key for Incident Update | \n| Linux Tested | \n| Docker Environment\
+    \ | \n\n**Distribution**\n\n`Supplied as-is for reference. No implied functionality\
+    \ or support for this example.`\n"
+  executionEnabled: false
+  group: 🩻 Diagnostics 🩻
+  id: fc6ce94e-ce63-4b91-8d26-b5fe6fdad336
+  loglevel: INFO
+  name: Docker and Container Environment Check
+  nodeFilterEditable: false
+  options:
+  - description: (Optional) Add a PagerDuty Incident ID to add the diagnostic output
+      of this Job to an Incident.
+    label: PagerDuty Incident ID
+    name: pd_incident_id
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Check Docker environment and container status
+      fileExtension: .sh
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'false'
+            name: docker_status
+            regex: ^(.+)
+          type: key-value-data-multilines
+      script: |
+        #!/bin/bash
+
+        echo "Checking Docker environment and container status..."
+
+        echo "---"
+        echo "Running containers:"
+        sudo docker ps --format "{{.Names}} (Up {{.RunningFor}})" | while read -r line; do
+          CONTAINER_ID=$(echo "$line" | awk '{print $1}')
+          HEALTH_STATUS=$(docker inspect --format='{{.State.Health.Status}}' "$CONTAINER_ID" 2>/dev/null)
+
+          if [ "$HEALTH_STATUS" = "healthy" ]; then
+            echo "✅ $line"
+          elif [ "$HEALTH_STATUS" = "unhealthy" ]; then
+            echo "❌ $line"
+          else
+            echo "➖ $line"
+          fi
+        done
+        echo "---"
+        echo "Docker version:"
+        sudo docker version
+    - configuration:
+        api_token: ENTER API KEY
+        email: ENTER EMAIL ADDRESS
+        incident_id: ${option.pd_incident_id}
+        note: 'Docker Environment Check:\n\n${data.docker_status*} \n\nClick here
+          for more details: ${job.url}#output'
+      description: Send Diagnostics to PagerDuty
+      errorhandler:
+        configuration:
+          fail: 'false'
+          halt: 'true'
+          status: 'Please provide PagerDuty API token, User Email, and Incident ID
+            to send diagnostics to Incident.'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: flow-control
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'true'
+            logData: 'false'
+            name: pd-output
+            regex: (.*)
+          type: key-value-data-multilines
+      type: pd-note-step
+    keepgoing: false
+    strategy: node-first
+  tags: 'diagnostics,docker'
+  uuid: fc6ce94e-ce63-4b91-8d26-b5fe6fdad336
+

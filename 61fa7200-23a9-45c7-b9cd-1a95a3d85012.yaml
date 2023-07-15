@@ -1,0 +1,69 @@
+- defaultTab: nodes
+  description: "Sample Remote SSL Checking\n# Remote SSL Site Checking\nWritten by:\
+    \ Justyn Roberts\nAn Example of using the Script editor as a configuration UI\n\
+    \nA Simple shell script to process each of the sites listed, and check for the\
+    \ SSL validity.\n\nThe output displays a yellow warning, but the line could easily\
+    \ be modified to create a PagerDuty Incident.\n\n\n| Title| Data | \n| --- | ---\
+    \ | \n| Target Platform:| **OSS,PAOP,RBA** |\n\n|Assumptions:|\n| --- | \n| RBA\
+    \ has a Runner installed or PAOP | \n|Bash script relies on OpenSSL Client | \n\
+    |Linux tested | \n\n**Distribution**\n\n`Supplied as-is for reference. No implied\
+    \ functionality or support for this example.`"
+  executionEnabled: false
+  group: 🔒 Security Tasks 🔒
+  id: 61fa7200-23a9-45c7-b9cd-1a95a3d85012
+  loglevel: INFO
+  name: Check External SSL Certificates
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - args: website
+      description: 'Website List - (Line Separated, Use this UI to edit) - Could equally
+        be stored in SCM.'
+      interpreterArgsQuoted: false
+      script: |-
+        google.co.uk
+        bbc.co.uk
+        tesco.com
+        hsbc.co.uk
+        standardchartered.com
+        barclays.co.uk
+        rbs.com
+        santander.co.uk
+        lloydsbank.com
+        royalmail.com
+        bt.com
+        vodafone.com
+        sky.com
+        virginmedia.com
+        o2.co.uk
+        ee.co.uk
+        britishgas.co.uk
+        scottishpower.co.uk
+        npower.com
+      scriptInterpreter: 'cp '
+    - description: Execute check for each website.
+      script: "#!/bin/bash\n\n# Script checks site, with optional time out of 2s\n\
+        # DOMAINS= \"\" : path to line delimited external file of sites to check\n\
+        \nTIMEOUT=2\nDOMAINS=\"website\"\nDAYS=\"7\"\n\nfunction child_timeout ()\
+        \ {\n        child=$!\n        timeout=$1\n        (\n        #trap -- \"\"\
+        \ SIGINT\n\n        sleep $timeout\n        if [ $(ps -o pid= -o comm= --ppid\
+        \ $$ | grep -o $child) ]; then\n                kill -9 $child\n        fi\n\
+        \        ) &\nwait $child > /dev/null 2>&1\n\n}\n\nfunction checksite () {\n\
+        expirationdate=$(date -d \"$(: | openssl s_client -connect \"$TARGET\":443\
+        \ -servername \"$TARGET\" 2>/dev/null | openssl x509 -text | grep 'Not After'\
+        \ |awk '{print $4,$5,$7}')\" '+%s');\nin7days=$(($(date +%s) + (86400*DAYS)));\n\
+        \nif [ \"$in7days\" -gt \"$expirationdate\" ]; then\n      echo \"🟨 Certificate\
+        \ for $TARGET expires in less than $DAYS days, on $(date -d @\"$expirationdate\"\
+        \ '+%Y-%m-%d')\" ;\n      # raisePDevevent() - Could use PDCLI or Webhook\
+        \ here.\nelse     \n\n      echo \"🟩 $TARGET - $(date -d @\"$expirationdate\"\
+        \ '+%Y-%m-%d')\";\n  fi;\n}\n\n# Main loop\nwhile read -r TARGET; do\n(checksite)\
+        \ & child_timeout $TIMEOUT\ndone<\"${DOMAINS}\""
+    keepgoing: false
+    strategy: node-first
+  tags: security
+  uuid: 61fa7200-23a9-45c7-b9cd-1a95a3d85012
+

@@ -1,0 +1,71 @@
+- defaultTab: nodes
+  description: "# General SMTP Email Example\nWritten by: Justyn Roberts\n\nGeneral\
+    \ SMTP sending Example. Includes TLS - \nShould work with SMTP providers - If\
+    \ you need a free one, try Mailjet for 200 free mails a Month\n\n| Title| Data\
+    \ | \n| --- | --- | \n| Target Platform:| **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n\
+    | --- | \n| RBA has a Runner installed or PAOP | \n| Requires Python 3 on a node/runner\
+    \ | \n| Python module pip smtplib |\n\n**Distribution**\n\n`Supplied as-is for\
+    \ reference. No implied functionality or support for this example.`"
+  executionEnabled: false
+  group: 🙊 Chat Ops 🙊
+  id: c5e16f52-9d56-4503-8cd2-ccbfc80d9979
+  loglevel: INFO
+  name: Output data to Email via SMTP
+  nodeFilterEditable: false
+  options:
+  - description: Message to send
+    label: Message
+    name: message
+    value: Test message
+  - description: SMTP/TLS Port 587 is the default
+    label: Port to use
+    name: port
+    value: '587'
+  - description: Destination Email Address
+    label: Send message to
+    name: sendto
+    value: mymail@here.com
+  - description: Senders address
+    label: Sent from Address
+    name: sentfrom
+    value: senthis@fromhere.com
+  - description: Address of SMTP Endpoint eg.
+    label: SMTP Endpoint
+    name: smtp_address
+    value: in-v3.mailjet.com
+  - description: Password to use - Use Password stored in Keystore
+    label: SMTP/TLS Password
+    name: smtp_password
+    secure: true
+    storagePath: keys/here
+    valueExposed: true
+  - description: SMTP username
+    label: SMTP Username
+    name: smtp_username
+    value: Username
+  - description: Message Subject
+    label: subject
+    name: subject
+    value: Update
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - interpreterArgsQuoted: false
+      script: |-
+        import smtplib
+        smtpobject = smtplib.SMTP('@option.smtp_address@', @option.port@)
+        smtpobject.starttls()
+        smtpobject.login('@option.smtp_username@','@option.smtp_password@')
+        subject = 'Subject: @option.subject@ \n'
+        message = subject +'@option.message@'
+        smtpobject.sendmail('@option.sentfrom@', '@option.sendto@', message)
+        smtpobject.quit()
+      scriptInterpreter: python3
+    keepgoing: false
+    strategy: node-first
+  tags: 'email,smtp'
+  uuid: c5e16f52-9d56-4503-8cd2-ccbfc80d9979
+

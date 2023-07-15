@@ -1,0 +1,117 @@
+- defaultTab: nodes
+  description: "> Grab any output or pattern to a value you can use.\n\n**Description:**\n\
+    A log filter processes the output of a command,script or plugin<br>\nStarter examples\
+    \ here include:-\n\n- Capture entire output with multi line regex\n- Capture single\
+    \ value with regex\n- Mask sensitive data (eg Passwords)\n- Parse Json Objects\n\
+    - Parse output and provide visual indicators \n\n**Assumptions:**\n\n - RBA with\
+    \ Runner Installed OR Self Hosted (PAOP)\n - Linux Tested\n\n**Documentation:**\
+    \ [Log Filters](https://docs.rundeck.com/docs/manual/log-filters/)\n"
+  executionEnabled: true
+  group: 👣 Your First Steps in Automation 👣
+  id: 9be2dc8c-1579-4084-8270-c3a596ba750d
+  loglevel: INFO
+  name: 4. Capturing Output via log filters
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Capture Everything in output with log filter
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: simple
+            regex: (.*)
+          type: key-value-data-multilines
+      script: |-
+        #Example command output, captured via multiline regex log filter
+        echo "kubectl get namespaces"
+        echo "/n"
+        echo "NAME              STATUS   AGE"
+        echo "default           Active   7d1h"
+        echo "kube-node-lease   Active   7d1h"
+        echo "kube-public       Active   7d1h"
+        echo "kube-system       Active   7d1h"
+        echo "travelduty        Active   7d1h"
+    - description: Output Data from Log Filter
+      exec: echo "Command Output ${data.simple}"
+    - description: Capture specific data in output via log filter
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: specificdata
+            regex: ^Linux\s(.+)$
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        #Example command output, captured via multiline regex log filter
+        echo "Linux ip-10-64-0-90.ec2.internal 4.14.291-218.527.amzn2.x86_64 #1 SMP Fri Aug 26 09:54:31 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux"
+    - description: Output Data from Log Filter
+      exec: 'echo "Command Output: ${data.specificdata}"'
+    - description: Mask Sensitive Data
+      plugins:
+        LogFilter:
+        - config:
+            maskOnlyValue: 'false'
+            regex: ^Your\sPassword\sis\s(.+)$
+            replacement: '[SECURE]'
+          type: mask-log-output-regex
+      script: |-
+        #Example command output, captured via multiline regex log filter
+        echo "Your Password is Pr0CessAutoMation20222111 "
+    - description: Parse Json with JQ
+      plugins:
+        LogFilter:
+        - config:
+            filter: .vegetables[0].veggieName
+            logData: 'true'
+            prefix: jsonoutput
+          type: json-mapper
+      script: |-
+        #Example Json Creation
+        echo '{
+          "fruits": [ "apple", "orange", "pear" ],
+          "vegetables": [
+            {
+              "veggieName": "potato",
+              "veggieLike": true
+            },
+            {
+              "veggieName": "broccoli",
+              "veggieLike": false
+            }
+          ]
+        }'
+    - description: Output Parsed JQ Data
+      exec: 'echo "Command Output: ${data.jsonoutput}"'
+    - description: Parse Output for Positive or Negative Indicators
+      plugins:
+        LogFilter:
+        - config:
+            color: Blue
+            contextVariable: status
+            doNothing: 'true'
+            mute: 'false'
+            regex: ^.*(Name\sor\sservice\snot\sknown)
+            statusSymbol: ❌
+            text: Failed Service
+          type: progress-badges
+      script: |-
+        #Example command output, captured via multiline regex log filter
+        echo 'ping: www.doesntwork.com: Name or service not known            403648        0    403648   0% /run/user/1000'
+    keepgoing: false
+    strategy: node-first
+  tags: first_steps
+  uuid: 9be2dc8c-1579-4084-8270-c3a596ba750d
+

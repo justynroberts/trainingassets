@@ -1,0 +1,118 @@
+- defaultTab: nodes
+  description: |-
+    Populate trial instance with basic demo information
+
+    Uses customer trial/Demo instance
+    This job run terraform cli on one of my node and all the source file is local to a linux vm connecting to Terraform my Terraform Cloud account
+
+    ---
+    ### How To Demo This Runbook
+
+    In your brand new trial instance, create an API access key from your trial instance and use the access key to run this job.
+    1.  Paste the API key in the "PagerDuty Access API Key" field.
+    2.  put in the name of the on call person.  There are 6 users and if you don't fill in the fields it will default to responder1 to responder6 by default
+    3.  run the job
+
+    ### This job create the following in a brand new instance for demo"
+
+    1   Create 6 users (responder1 to responder6 by default if you don't put in the name
+    2   Create a team (Demo Response Team)
+    3   on-call schedule (Demo On-call Schedule)
+    4   escalation policy (Demo eCommerce EP)
+    5   service (Demo Response Team)
+
+    ###
+  executionEnabled: false
+  group: 🧩 General Integrations 🧩
+  id: 8b436f53-f69b-4d44-843a-aa888954360a
+  loglevel: INFO
+  name: PagerDuty Trial Subdomain setup with Terraform
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty access api key
+    label: ✏️ PagerDuty Access API Key
+    name: pd_api
+    required: true
+    value: Add your key here
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty responder name
+    label: ✏️ On-Call person
+    name: responder1
+    required: true
+    value: responder1
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty responder name
+    label: ✏️ On-Call person
+    name: responder2
+    required: true
+    value: responder2
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty responder name
+    label: ✏️ On-Call person
+    name: responder3
+    required: true
+    value: responder3
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty responder name
+    label: ✏️ On-Call person
+    name: responder4
+    required: true
+    value: responder4
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty responder name
+    label: ✏️ On-Call person
+    name: responder5
+    required: true
+    value: responder5
+  - description: |-
+      ##  🧤 Usage
+      This is the pagerduty responder name
+    label: ✏️ On-Call person
+    name: responder6
+    required: true
+    value: responder6
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: copy the original file to a working directory
+      exec: sudo cp /home/ubuntu/terraform/demo/sourcefiles/main.tf /home/ubuntu/terraform/demo/main.tf
+    - description: Replace the pd_api key in the main.tf file
+      exec: sed -i -e 's/replaceme/${option.pd_api}/g' /home/ubuntu/terraform/demo/main.tf
+    - description: Customize Customer Responder Name
+      script: |-
+        sed -i -e 's/responder1/@option.responder1@/g' /home/ubuntu/terraform/demo/main.tf
+        sed -i -e 's/responder2/@option.responder2@/g' /home/ubuntu/terraform/demo/main.tf
+        sed -i -e 's/responder3/@option.responder3@/g' /home/ubuntu/terraform/demo/main.tf
+        sed -i -e 's/responder4/@option.responder4@/g' /home/ubuntu/terraform/demo/main.tf
+        sed -i -e 's/responder5/@option.responder5@/g' /home/ubuntu/terraform/demo/main.tf
+        sed -i -e 's/responder6/@option.responder6@/g' /home/ubuntu/terraform/demo/main.tf
+    - description: --  Run Terraform Initialization --
+      script: |-
+        #!/bin/bash
+        cd /home/ubuntu/terraform/demo
+        terraform init
+    - description: --  Run Terraform plan to check for any error --
+      script: |-
+        #!/bin/bash
+        cd /home/ubuntu/terraform/demo
+        terraform plan
+    - description: --  Run Terraform Apply  --
+      script: |-
+        #!/bin/bash
+        cd /home/ubuntu/terraform/demo
+        sudo terraform apply -auto-approve -no-color
+    keepgoing: false
+    strategy: node-first
+  tags: 'pagerduty,terraform'
+  uuid: 8b436f53-f69b-4d44-843a-aa888954360a
+

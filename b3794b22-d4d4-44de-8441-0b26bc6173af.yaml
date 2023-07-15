@@ -1,0 +1,85 @@
+- defaultTab: nodes
+  description: "Basic Harness Pipeline execution.\nWritten by: Justyn Roberts\n\n\
+    A simple example of triggering a Harness pipeline from a Workflow.\nThis could\
+    \ be used as part of a remediation/rebuild flow\n\nThis could be used as a starter\
+    \ for more complex interactions.\nTakes 6 parameters :-\n\n| Title | \n| --- |\n\
+    |Pipeline identifier  | \n|accountIdentifier  | \n|orgIdentifier  | \n|projectIdentifier\
+    \  | \n|API Key   | \n\nWill work with first or Next gen versions of Harness\n\
+    \n| Target Platform:| **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n| --- | \n| RBA\
+    \ has a Runner installed or PAOP | \n\n**Distribution**\n\n`Supplied as-is for\
+    \ reference. No implied functionality or support for this example.`"
+  executionEnabled: false
+  group: 🛠 CD-CI Automation 🛠
+  id: b3794b22-d4d4-44de-8441-0b26bc6173af
+  loglevel: INFO
+  name: Trigger Harness Pipeline
+  nodeFilterEditable: false
+  options:
+  - description: This Option retrieves a password (API) kwy to present to the step
+    label: Harness API Key (from Key Vault)
+    name: harnessApikey
+    required: true
+    secure: true
+    storagePath: keys/project/jroberts/Harness
+    valueExposed: true
+  - description: |-
+      Harness Account Identifier
+      Example: JFgX4u6QQYakhpP0oxxx
+    label: Account Identifier
+    name: accountIdentifier
+    required: true
+  - description: Use this option to set Input Set References
+    label: Input Set References
+    name: inputSetReferences
+    required: true
+  - description: |-
+      The Harness Organisation Identifier
+      Example: default
+    label: Organisation Identifier
+    name: orgIdentifier
+    required: true
+  - description: |-
+      The ID of the Pipeline to exeute.
+      Example ID: Build_app_16714832800tt32
+    label: Pipeline Identifier
+    name: pipelineIdentifier
+    required: true
+  - description: |
+      Harness Project Identifier
+      Example: default_project
+    label: Project Identifier
+    name: projectIdentifier
+    required: true
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        body: |-
+          {
+          "inputSetReferences": [
+          "${unquotedoption.inputSetReferences}"
+          ]}
+        checkResponseCode: 'false'
+        headers: |-
+          {"x-api-key": "${unquotedoption.harnessApikey}",
+          "Content-Type": "application/json"}
+        method: POST
+        printResponse: 'false'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://app.harness.io/gateway/pipeline/api/pipeline/execute/${option.pipelineIdentifier}/inputSetList?accountIdentifier=${option.accountIdentifier}&orgIdentifier=${option.orgIdentifier}&projectIdentifier=${option.projectIdentifier}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Execute Pipeline
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  tags: harness
+  uuid: b3794b22-d4d4-44de-8441-0b26bc6173af
+

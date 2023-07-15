@@ -1,0 +1,161 @@
+- defaultTab: nodes
+  description: "This job creates, executes and saves a search job in Sumo Logic\n\n\
+    # How this PA Job Works\n1. Takes a search query as an input option. \n2. This\
+    \ Jobs sends api call to SumoLogic which executes and saves a search job using\
+    \ 'Search Job Operator'.\n3. The job receives the search id and makes a second\
+    \ api call to get the records count for that query\n4. the query results are sent\
+    \ to Pagerduty as a link to a SumoLogic lookUp table\n5. if record count value\
+    \ is less than 4 ends the process else it creates an incident in a different service\n\
+    6. See the `ReadMe` for more information\n\n![architecture](https://lucid.app/publicSegments/view/99901583-5ad1-4343-b68c-b8f972d9a32c/image.png)\n\
+    \n---\n### Important\n.\n\n\n\n\n\n"
+  executionEnabled: false
+  group: 🧩 General Integrations 🧩
+  id: 357758db-0bf4-4871-9ba7-501013a50c98
+  loglevel: INFO
+  name: Execute SumoLogic saved query
+  nodeFilterEditable: false
+  options:
+  - description: 'Sumo Logic query '
+    label: Sumo Logic query
+    name: query
+    value: '"_source=microk8s.log failed | _messagetime as time | _raw as message|
+      save append path://\"/Library/Users/gabrielfelipenew@outlook.com/Setup Wizard
+      Searches/table4\" | count"'
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        body: |-
+          {
+          "query": ${option.query},
+          "from":"2023-01-24T00:00:00",
+          "to":"2023-01-25T20:13:17",
+          "timezone": "GMT-03"
+          }
+        checkResponseCode: 'true'
+        headers: |-
+          {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Basic ADDYOURKEYHERE"
+
+          }
+        method: POST
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://api.sumologic.com/api/v1/search/jobs
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Executes the search jobs and saves the results to a Lookup Table
+        using save search operator
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            filter: . | values
+            logData: 'true'
+            prefix: result
+          type: json-mapper
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: wait 5 sec before next api call
+      exec: sleep 5
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        headers: |-
+          {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": "Basic ADD KEY"
+
+          }
+        method: GET
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://api.sumologic.com/api/v1/search/jobs/${data.id}/records?offset=0&limit=10
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Gathering count records
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            filter: .records[0].map | values
+            logData: 'true'
+            prefix: result
+          type: json-mapper
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        export: failed_pods
+        group: export
+        value: ${data._count}
+      description: Saving count for failed pods
+      nodeStep: false
+      type: export-var
+    - configuration:
+        api_token: ADD KEY
+        email: fieldengineers@example.com
+        incident_id: ${option.pd_incident_id}
+        note: 'Link to Job search results: https://service.sumologic.com/ui/#/lookup/000000000320684A'
+      description: Send query results to Pagerduty Incident
+      nodeStep: false
+      type: pd-note-step
+    - description: Showing numer of failed pods
+      exec: 'echo "Failed Pods: ${export.failed_pods}"'
+    - description: Message
+      exec: echo "more than 3 pods failed"
+    - configuration:
+        authentication: None
+        body: "{\n  \"incident\": {\n    \"type\": \"incident\",\n    \"title\": \"\
+          CRITICAL: Device failure threshold exceed\",\n    \"service\": {\n     \
+          \ \"id\": \"PTPK7UQ\",\n      \"type\": \"service_reference\"\n    },\n\
+          \   \n    \"urgency\": \"high\",\n    \n    \"body\": {\n      \"type\"\
+          : \"incident_body\",\n      \"details\": \"A disk is getting full on this\
+          \ machine. \"\n    }\n    \n  }\n}"
+        checkResponseCode: 'true'
+        headers: |-
+          {
+          "Authorization": "Token token=ADDYOURTOKEN",
+          "Accept": "application/vnd.pagerduty+json;version=2",
+          "Content-Type": "application/json",
+          "From": "fieldengineers@example.com"
+          }
+        method: POST
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://api.pagerduty.com/incidents
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Creating new incident in another Service
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: End
+      exec: echo "No other incident was triggered"
+    keepgoing: true
+    pluginConfig:
+      WorkflowStrategy:
+        ruleset:
+          rules: |-
+            [1] run-at-start
+            [2] run-after:1
+            [3] run-after:2
+            [4] run-after:3
+            [5] run-after:4
+            [6] run-after:5
+            [7] run-after:6 if:export.failed_pods>3
+            [8] run-after:7 if:export.failed_pods>3
+            [9] run-after:6 if:export.failed_pods<3
+    strategy: ruleset
+  tags: 'integrations,sumologic'
+  uuid: 357758db-0bf4-4871-9ba7-501013a50c98
+

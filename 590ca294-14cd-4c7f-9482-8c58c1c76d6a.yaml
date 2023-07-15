@@ -1,0 +1,68 @@
+- defaultTab: nodes
+  description: |-
+    > Get a json object from an external source, and iterate on it
+
+    **Description:**
+    The loop step can iterate across a json object (or wait for success)
+    This job demonstrates retrieval of data from an external source and susbsequent iteration using the [job step](https://docs.rundeck.com/docs/manual/workflow-steps/loop-plugins.html#run-script-from-a-json-array)<br>
+    **Assumptions:**
+
+     - RBA with Runner Installed OR Self Hosted (PAOP)
+     - Linux Tested
+
+    **Documentation:** [Here](https://docs.rundeck.com/docs/manual/workflow-steps/loop-plugins.html#run-script-from-a-json-array)
+  executionEnabled: true
+  group: 👣 Your First Steps in Automation 👣
+  id: 590ca294-14cd-4c7f-9482-8c58c1c76d6a
+  loglevel: INFO
+  name: 7. Looping in Job Steps
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        method: GET
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://jsonplaceholder.typicode.com/users/1/todos
+        sslVerify: 'true'
+        timeout: '30000'
+      description: First - Grab a JSON Object from https://jsonplaceholder.typicode.com/users/1/todos
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'true'
+            name: jsonobject
+            regex: (.*)
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    - configuration:
+        jsonDataContextArray: data.jsonobject
+        printIterationData: 'false'
+        script: |-
+          #Simple Script that takes the JSON input in the format $vars.FIELDNAME
+          title="$vars.title"
+          echo "Processing Title: $title"
+          # Hint:If you need to run a job, you could always run a job via a webhook in here
+        stopIterationOnFailure: 'false'
+      description: 'Iterate over the Json object to print its Title. '
+      nodeStep: true
+      type: iterate-json-script-nodestep-plugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 590ca294-14cd-4c7f-9482-8c58c1c76d6a
+

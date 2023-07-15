@@ -1,0 +1,326 @@
+- defaultTab: output
+  description: "Multiple SaaS Provider Check\nWritten by: Chris Bell\n\nCheck Multiple\
+    \ SaaS providers\nParse Response, and add emojis\nUpdate PD Logs\n\nIncident is\
+    \ optional.\n\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed or PAOP\
+    \ | \n| PD Key for Incident Update | \n| Local/Remote | \n\n**Distribution**\n\
+    \n`Supplied as-is for reference. No implied functionality or support for this\
+    \ example.`"
+  executionEnabled: false
+  group: 🩻 Diagnostics 🩻
+  id: 0e0f1ac9-54f3-4d6a-a086-fdc507034ec3
+  loglevel: INFO
+  name: SaaS Service Check
+  nodeFilterEditable: false
+  options:
+  - description: Salesforce Pod identifier (e.g. POD70)
+    label: Salesforce Pod
+    name: salesforce_pod
+    value: POD88
+  - description: (Optional) Add a PagerDuty Incident ID to add the diagnostic output
+      of this Job to an Incident.
+    label: PagerDuty Incident ID
+    name: pd_incident_id
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        rssUrl: https://status.heroku.com/feed
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve Heroku Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: heroku-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent Heroku service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: heroku-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent Heroku service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: heroku-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent Heroku service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://azurestatuscdn.azureedge.net/en-us/status/feed/
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve Azure Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: azure-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent Azure service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: azure-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent Azure service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: azure-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent Azure service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://status.cloud.google.com/en/feed.atom
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve GCP Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: gcp-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent GCP service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: gcp-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent GCP service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: gcp-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent GCP service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://status.pagerduty.com/feed
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve PagerDuty Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: pagerduty-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent PagerDuty service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: pagerduty-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent PagerDuty service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: pagerduty-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent PagerDuty service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://status.salesforce.com/rss/${option.salesforce_pod}
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve Salesforce Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: salesforce-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent Salesforce service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: salesforce-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent Salesforce service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: salesforce-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent Salesforce service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://status.aws.amazon.com/rss/all.rss
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve AWS Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: aws-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent AWS service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: aws-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent AWS service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: aws-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent AWS service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://status.datadoghq.com/history.rss
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve DataDog Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: datadog-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent Datadog service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: datadog-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent Datadog service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: datadog-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent Datadog service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        rssUrl: https://www.githubstatus.com/history.rss
+        timeRange: '3'
+        timeUnit: Hours
+      description: Retrieve Github Events
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: github-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: 0'
+            statusSymbol: ✅
+            text: No recent Github service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: github-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: \[RESOLVED\]
+            statusSymbol: ✅
+            text: No recent Github service disruptions
+          type: progress-badges
+        - config:
+            contextVariable: github-incidents
+            doNothing: 'true'
+            mute: 'false'
+            regex: 'specified time range: [^0]'
+            statusSymbol: ❌
+            text: Recent Github service disruptions
+          type: progress-badges
+      type: rss-feed-retrieve-events
+    - configuration:
+        api_token: Insert your Key
+        email: 'Insert Email '
+        incident_id: ${option.pd_incident_id}
+        note: 'AWS: ${data.aws-incidents}\n\nGithub: ${data.github-incidents}\n\nDatadog:
+          ${data.datadog-incidents}\n\nSalesforce: ${data.salesforce-incidents}\n\nHeroku:
+          ${data.heroku-incidents}\n\nAzure: ${data.azure-incidents}\n\nGCP: ${data.gcp-incidents}\n\nPagerDuty:
+          ${data.pagerduty-incidents}\n\nClick here for more details: ${job.url}#output'
+      description: Send Diagnostics to PagerDuty
+      errorhandler:
+        configuration:
+          fail: 'false'
+          halt: 'true'
+          status: 'Please provide PagerDuty API token, User Email, and Incident ID
+            to send diagnostics to Incident.'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: flow-control
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'true'
+            logData: 'false'
+            name: pd-output
+            regex: (.*)
+          type: key-value-data-multilines
+      type: pd-note-step
+    keepgoing: false
+    strategy: node-first
+  tags: 'diagnostics,rss,saas'
+  uuid: 0e0f1ac9-54f3-4d6a-a086-fdc507034ec3
+

@@ -1,0 +1,239 @@
+- defaultTab: output
+  description: "Scenario based on a multi datasource removal of user data based on\
+    \ a \"right to be removed\" Request.\n**Type:** Service orchestration. \n\n**Use\
+    \ Case:** Automation of repetitive data task across multiple data sources\n\n\
+    ![DATABASE](https://lucid.app/publicSegments/view/d530f117-133b-4a12-b76e-03bc2ed92e16/image.png)\n\
+    \n**Trigger:** \n- Human Trigger via self service\n- ITSM (SNOW Service Catalog/JIRA\
+    \ etc).\n- Forms Based (eg Catalytic)\n\n**Technologies.** \n- RDBMS (MySQL, but\
+    \ could work potentially for any data source that is accessible)\n- Shell Scripting\n\
+    - SQL Run Job steps. \n\n[ReadMe] for more information. \n\n---\n\n## Background:\n\
+    \nThis scenario centers on a customer use case around removal of GDPR data from\
+    \ multiple business systems.\nUsers have a right to be removed if they request,\
+    \ and this can become a toil task for\nemployees. \n\n## Response:\n\nProcess\
+    \ automation allows entering of a user email address, and the data will be removed\
+    \ from 6 sources. \n\n- CRM. \n- BILLING. \n- SALES. \n- ACCOUNTS. \n- SUPPORT.\
+    \ \n- ANALYTICS. \n\n\n\n## Current State:\n\nThey can now completely self serve\
+    \ this process, or have this triggered from an ITSM tool. \nIts audited, and deletions\
+    \ can be proven.\n\n## **How to run:**\n\n- Select an email from the drop down.\
+    \ \n- Enjoy :)   \n\nDont forget the talk track around the 6 databases, with 6\
+    \ different security credentials - this is much more powerful than a single script.\n\
+    Also we have error checking that could potentially raise notifications, or Incidents\
+    \ in the event of a failure.\n"
+  executionEnabled: false
+  group: ⚙️ Line of Business Automation/Deprovisioning
+  id: adde6ee5-9521-4ea3-947c-97a6110a1576
+  loglevel: INFO
+  name: User Data Deprovisioning (GDPR Removal)
+  nodeFilterEditable: false
+  options:
+  - description: "Enter User email to remove from multiple data sources.  \nUse the\
+      \ drop down for a sample of users.  "
+    label: User Email
+    name: useremail
+    value: john.doe@email.com
+    values:
+    - john.doe@email.com
+    - jane.smith@email.com
+    - robert.johnson@email.com
+    - james.williams@email.com
+    - linda.brown@email.com
+    - michael.davis@email.com
+    - sarah.miller@email.com
+    - david.wilson@email.com
+    - emma.moore@email.com
+    - daniel.taylor@email.com
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: EMEA
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - script: |-
+        echo "GDPR COMPLIANCE. RIGHT TO REMOVAL"
+        echo "Displaying sample list of users"
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/CRM?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: select * from Users;
+        statementDelimiter: /
+        user: crm_user
+      description: Get Sample User List
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        color: Green
+        text: Removing ${option.useremail} from CRM Database
+      description: CRM Database
+      nodeStep: false
+      type: progress-badge
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/CRM?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: DELETE FROM Users WHERE Email = "${option.useremail}";
+        statementDelimiter: /
+        user: crm_user
+      description: Remove from CRM Database
+      errorhandler:
+        exec: echo "Deletion for ${option.useremail} on CRM Database Failed"
+        keepgoingOnSuccess: true
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        color: Green
+        text: Removing ${option.useremail} from Billing Database
+      description: Billing Database
+      nodeStep: false
+      type: progress-badge
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/BILLING?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: DELETE FROM Users WHERE Email = "${option.useremail}";
+        statementDelimiter: /
+        user: billing_user
+      description: Remove from BILLING Database
+      errorhandler:
+        exec: echo "Deletion for ${option.useremail} on BILLING Database Failed"
+        keepgoingOnSuccess: true
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        color: Green
+        text: Removing ${option.useremail} from Sales Database
+      description: Sales database
+      nodeStep: false
+      type: progress-badge
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/SALES?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: DELETE FROM Users WHERE Email = "${option.useremail}";
+        statementDelimiter: /
+        user: sales_user
+      description: Remove from SALES Database
+      errorhandler:
+        exec: echo "Deletion for ${option.useremail} on SALES Database Failed"
+        keepgoingOnSuccess: true
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        color: Green
+        text: Removing ${option.useremail} from Accounts Database
+      description: Accounts database
+      nodeStep: false
+      type: progress-badge
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/ACCOUNTS?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: DELETE FROM Users WHERE Email = "${option.useremail}";
+        statementDelimiter: /
+        user: accounts_user
+      description: Remove from ACCOUNTS Database
+      errorhandler:
+        exec: echo "Deletion for ${option.useremail} on ACCOUNTS Database Failed"
+        keepgoingOnSuccess: true
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        color: Green
+        text: Removing ${option.useremail} from Support Database
+      description: Support Database
+      nodeStep: false
+      type: progress-badge
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/SUPPORT?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: DELETE FROM Users WHERE Email = "${option.useremail}";
+        statementDelimiter: /
+        user: support_user
+      description: Remove from SUPPORT Database
+      errorhandler:
+        exec: echo "Deletion for ${option.useremail} on SUPPORT Database Failed"
+        keepgoingOnSuccess: true
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        color: Green
+        text: Removing ${option.useremail} from Analytics Database
+      description: Analytics Database
+      nodeStep: false
+      type: progress-badge
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/ANALYTICS?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: DELETE FROM Users WHERE Email = "${option.useremail}";
+        statementDelimiter: /
+        user: analytics_user
+      description: Remove from ANALYTICS Database
+      errorhandler:
+        exec: echo "Deletion for ${option.useremail} on ANALYTICS Database Failed"
+        keepgoingOnSuccess: true
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - configuration:
+        commit: 'false'
+        jdbcDriver: org.mariadb.jdbc.Driver
+        jdbcUrl: jdbc:mysql://localhost:3306/CRM?allowPublicKeyRetrieval=true
+        passwordStoragePath: keys/project/global-production/MySQL
+        scriptBody: select * from Users;
+        statementDelimiter: /
+        user: crm_user
+      description: Get Sample User List
+      nodeStep: true
+      type: org.rundeck.sqlrunner.SQLRunnerNodeStepPlugin
+    - args: '> /dev/null 2>&1'
+      description: Clean up
+      interpreterArgsQuoted: false
+      script: |
+        USE CRM;
+        DELETE FROM Users;
+        INSERT INTO Users(UserName, Email) VALUES
+        ('John Doe', 'john.doe@email.com'),
+        ('Jane Smith', 'jane.smith@email.com'),
+        ('Robert Johnson', 'robert.johnson@email.com'),
+        ('James Williams', 'james.williams@email.com'),
+        ('Linda Brown', 'linda.brown@email.com'),
+        ('Michael Davis', 'michael.davis@email.com'),
+        ('Sarah Miller', 'sarah.miller@email.com'),
+        ('David Wilson', 'david.wilson@email.com'),
+        ('Emma Moore', 'emma.moore@email.com'),
+        ('Daniel Taylor', 'daniel.taylor@email.com');
+
+        USE BILLING;
+        DELETE FROM Users;
+        INSERT INTO Users(UserName, Email) SELECT UserName, Email FROM CRM.Users;
+        USE SALES;
+        DELETE FROM Users;
+        INSERT INTO Users(UserName, Email) SELECT UserName, Email FROM CRM.Users;
+        USE ACCOUNTS;
+        DELETE FROM Users;
+        INSERT INTO Users(UserName, Email) SELECT UserName, Email FROM CRM.Users;
+        USE SUPPORT;
+        DELETE FROM Users;
+        INSERT INTO Users(UserName, Email) SELECT UserName, Email FROM CRM.Users;
+        USE ANALYTICS;
+        DELETE FROM Users;
+        INSERT INTO Users(UserName, Email) SELECT UserName, Email FROM CRM.Users;
+      scriptInterpreter: sudo mysql -u root -p0 <
+    keepgoing: false
+    strategy: node-first
+  tags: 'gdpr,mysql,business'
+  uuid: adde6ee5-9521-4ea3-947c-97a6110a1576
+

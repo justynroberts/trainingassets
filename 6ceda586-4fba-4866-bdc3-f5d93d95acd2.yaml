@@ -1,0 +1,76 @@
+- defaultTab: nodes
+  description: "# Trigger Azure Devops\nWritten by: Justyn Roberts\n\nA simple example\
+    \ of triggering an Azure Devops pipeline from a Workflow.\nThis could be used\
+    \ as part of a remediation/rebuild flow\n\nThis could be used as a starter for\
+    \ more complex interactions.\n\n| Title| Data | \n| --- | --- | \n| Target Platform:|\
+    \ **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed\
+    \ or PAOP | \n|The Bearer token is stored in the key store, and it should be easy\
+    \ to modify to add extra fields and options|\n**Distribution**\n\n`Supplied as-is\
+    \ for reference. No implied functionality or support for this example.`"
+  executionEnabled: false
+  group: 🛠 CD-CI Automation 🛠
+  id: 6ceda586-4fba-4866-bdc3-f5d93d95acd2
+  loglevel: INFO
+  name: Trigger Azure Devops Pipeline
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      Enter your main repo or organisation name
+
+      eg mainapplication
+    label: Azure Organisation Name
+    name: organisation
+    required: true
+  - description: |-
+      Enter your Repo name
+
+      eg myapplication
+    label: Azure Project Name
+    name: repository
+    required: true
+  - description: |-
+      You will need to grab the pipeline ID.
+      This will be a numeric ID - the DefinitionID of the pipeline to run
+    label: Enter Pipeline ID
+    name: pipeline
+    required: true
+  - description: |-
+      Github key to use as authentication.
+      Example shows a personal access token
+    label: User API  key - Stored in Vault.
+    name: key
+    secure: true
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: Basic
+        body: "{\n\t\"definition\": {\"id\": ${unquotedoption.pipeline}}\n}"
+        checkResponseCode: 'false'
+        headers: |2+
+           { "Content-Type": "application/json",
+            "Accept": "application/json"}
+
+
+        method: POST
+        password: keys/project/project-services-north-prod/AzureDevops
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://dev.azure.com/${option.organisation}/${option.repository}/_apis/build/builds?api-version=6.0
+        sslVerify: 'true'
+        timeout: '30000'
+        username: '-'
+      description: Azure Devops Post to trigger Pipeline
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  tags: azure
+  uuid: 6ceda586-4fba-4866-bdc3-f5d93d95acd2
+

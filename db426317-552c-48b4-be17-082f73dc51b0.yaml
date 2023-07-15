@@ -1,0 +1,118 @@
+- defaultTab: output
+  description: Check Apache Status with Progress Badge
+  executionEnabled: false
+  group: 🩻 Diagnostics 🩻
+  id: db426317-552c-48b4-be17-082f73dc51b0
+  loglevel: INFO
+  name: Check Apache Status with Progress Badge
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        color: Grey
+        fontSize: 90%
+        text: Checking Apache Service
+      description: Info
+      nodeStep: false
+      type: progress-badge
+    - description: check apache status
+      exec: '"service apache2 status | grep -Eo ''(running|dead)''"'
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: apache_status
+            doNothing: 'true'
+            mute: 'false'
+            regex: running
+            statusSymbol: ✅
+            text: Healthy
+          type: progress-badges
+        - config:
+            contextVariable: apache_status
+            doNothing: 'true'
+            mute: 'false'
+            regex: dead
+            statusSymbol: ❌
+            text: Unhealthy
+          type: progress-badges
+        - config:
+            bgcolor: green
+            mode: blink
+            regex: running
+          type: highlight-output
+    - exec: echo The data variable has been set to ${data.apache_status}
+    - configuration:
+        color: Red
+        text: Stopping Apache Service
+      description: Info
+      nodeStep: false
+      type: progress-badge
+    - exec: sudo systemctl stop apache2
+    - description: check apache status
+      exec: '"service apache2 status | grep -Eo ''(running|dead)''"'
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: apache_status
+            doNothing: 'true'
+            mute: 'false'
+            regex: running
+            statusSymbol: ✅
+            text: Healthy
+          type: progress-badges
+        - config:
+            contextVariable: apache_status
+            doNothing: 'true'
+            mute: 'false'
+            regex: dead
+            statusSymbol: ❌
+            text: Unhealthy
+          type: progress-badges
+        - config:
+            bgcolor: red
+            mode: blink
+            regex: dead
+          type: highlight-output
+    - exec: echo The data variable has been set to ${data.apache_status}
+    - configuration:
+        color: Green
+        text: Starting Apache Service
+      description: Info
+      nodeStep: false
+      type: progress-badge
+    - exec: sudo systemctl start apache2
+    - description: check apache status
+      exec: '"service apache2 status | grep -Eo ''(running|dead)''"'
+      plugins:
+        LogFilter:
+        - config:
+            contextVariable: apache_status
+            doNothing: 'true'
+            mute: 'false'
+            regex: running
+            statusSymbol: ✅
+            text: Healthy
+          type: progress-badges
+        - config:
+            contextVariable: apache_status
+            doNothing: 'true'
+            mute: 'false'
+            regex: dead
+            statusSymbol: ❌
+            text: Unhealthy
+          type: progress-badges
+        - config:
+            bgcolor: yellow
+            mode: reverse
+            regex: running
+          type: highlight-output
+    - exec: echo The data variable has been set to ${data.apache_status}
+    keepgoing: false
+    strategy: node-first
+  tags: 'apache,progress_badge'
+  uuid: db426317-552c-48b4-be17-082f73dc51b0
+

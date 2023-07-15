@@ -1,0 +1,93 @@
+- defaultTab: output
+  description: "# Check Service Status, Restart, Send Logs to PD\nWritten by: Chris\
+    \ Bell\n\nCheck Service Status  \nRestart if Stopped  \n\nOptional Note Update\
+    \ in PD\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed or PAOP | \n\
+    | PD Key for Incident Update | \n| Linux Tested | \n\n**Distribution**\n\n`Supplied\
+    \ as-is for reference. No implied functionality or support for this example.`\n"
+  executionEnabled: false
+  group: 🏥 Response & Remediation 🏥
+  id: 24526581-0561-410b-91b2-2e5cb003f855
+  loglevel: INFO
+  multipleExecutions: true
+  name: 'Service Health Check, Restart and Log'
+  nodeFilterEditable: false
+  options:
+  - description: The service name to check.
+    label: Service Name
+    name: service_name
+    value: docker
+  - description: (Optional) Add a PagerDuty Incident ID to add the diagnostic output
+      of this Job to an Incident.
+    label: PagerDuty Incident ID
+    name: pd_incident_id
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Check service status and restart if needed
+      fileExtension: .sh
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'false'
+            name: service_status
+            regex: ^(.+)
+          type: key-value-data-multilines
+      script: |-
+        #!/bin/bash
+        SERVICE_NAME="@option.service_name@"
+        SERVICE_STATUS=$(systemctl is-active "$SERVICE_NAME")
+
+        if [ "$SERVICE_STATUS" == "active" ]; then
+          echo "✅ Service is running: $SERVICE_NAME"
+        else
+          echo "❌ Service is not running: $SERVICE_NAME"
+          echo "Attempting to restart the service..."
+          sudo systemctl start "$SERVICE_NAME"
+          RESTART_RESULT=$?
+          if [ $RESTART_RESULT -eq 0 ]; then
+            echo "⚠️ Service successfully restarted: $SERVICE_NAME"
+          else
+            echo "❌ Failed to restart service: $SERVICE_NAME"
+          fi
+        fi
+
+        echo "---"
+        echo "Log entries for service:"
+        journalctl -u "$SERVICE_NAME" -n 10 --no-pager
+    - configuration:
+        api_token: keys/project/PDT-Bell/pdt-bell-labs-key
+        email: rundeck@example.com
+        incident_id: ${option.pd_incident_id}
+        note: 'Service Health Check and Restart:\n\n${data.service_status*}\n\nClick
+          here for more details: ${job.url}#output'
+      description: Send Diagnostics to PagerDuty
+      errorhandler:
+        configuration:
+          fail: 'false'
+          halt: 'true'
+          status: 'Please provide PagerDuty API token, User Email, and Incident ID
+            to send diagnostics to Incident.'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: flow-control
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'true'
+            logData: 'false'
+            name: pd-output
+            regex: (.*)
+          type: key-value-data-multilines
+      type: pd-note-step
+    keepgoing: false
+    strategy: node-first
+  tags: 'remediation,restart,service'
+  uuid: 24526581-0561-410b-91b2-2e5cb003f855
+

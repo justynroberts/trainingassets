@@ -1,0 +1,118 @@
+- defaultTab: nodes
+  description: "# Send Data to MsTeams\nWritten by: Ridgey\n\nExample of sending a\
+    \ well formatted message to MSTeams\n\n|Assumptions:|\n| --- | \n| RBA has a Runner\
+    \ installed or PAOP | \n| Access to Teams| \n\n**Distribution**\n\n`Supplied as-is\
+    \ for reference. No implied functionality or support for this example.`"
+  executionEnabled: false
+  group: 🙊 Chat Ops 🙊
+  id: 3f67725d-6289-4fdd-85ee-2c3c98e78e50
+  loglevel: INFO
+  name: Output data to MS Teams
+  nodeFilterEditable: false
+  options:
+  - hidden: true
+    name: ms-teams-connector-url
+    secure: true
+    storagePath: keys/project/AddyourconnectorURL
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Get System Info from Node
+      fileExtension: sh
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            regex: ^RUNDECK:DATA:\s*([^\s]+?)\s*=\s*(.+)$
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        #!/bin/bash
+        echo "RUNDECK:DATA:memory = "`free | awk '/Mem/{printf("%.2f%"), $3/$2*100}'`
+        echo "RUNDECK:DATA:cpu = "`cat /proc/stat | awk '/cpu/{printf("%.2f%\n"), ($2+$4)*100/($2+$4+$5)}' |  awk '{print $0}' | head -1`
+        echo "RUNDECK:DATA:uptime = "`uptime | awk '{print $3,$4}' | sed 's/,//'`
+    - configuration:
+        authentication: None
+        body: |-
+          {
+            "@context": "https://schema.org/extensions",
+            "@type": "MessageCard",
+            "themeColor": "0078D7",
+            "title": "Automated Diagnostic Output",
+            "summary": "Job Name: ${job.name}",
+            "sections": [
+              {
+                "activityTitle": "Job Name: ${job.name}",
+                "activitySubtitle": "Node Name:${node.name}",
+                "facts": [
+                  {
+                    "name": "Uptime:",
+                    "value": "${data.uptime}"
+                  },
+                  {
+                    "name": "CPU Utilisation:",
+                    "value": "${data.cpu}"
+                  },
+                  {
+                    "name": "Memory Usage:",
+                    "value": "${data.memory}"
+                  },
+                  {
+                    "name": "Initiated By:",
+                    "value": "${job.username}"
+                  }
+                ]
+              }
+            ],
+            "potentialAction": [
+              {
+                "@type": "ActionCard",
+                "name": "Create Incident",
+                "inputs": [
+                  {
+                    "@type": "TextInput",
+                    "id": "feedback",
+                    "isMultiline": true,
+                    "title": "Enter your Incident Details here"
+                  }
+                ],
+                "actions": [
+                  {
+                    "@type": "HttpPOST",
+                    "name": "Raise Incident",
+                    "isPrimary": true,
+                    "target": "http://..."
+                  }
+                ]
+              },
+              {
+                "@type": "OpenUri",
+                "name": "Learn More",
+                "targets": [
+                  { "os": "default", "uri": "https://docs.microsoft.com/outlook/actionable-messages" }
+                ]
+              }
+            ]
+          }
+        checkResponseCode: 'false'
+        method: POST
+        printResponse: 'false'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.ms-teams-connector-url}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Post to Teams
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  tags: msteams
+  uuid: 3f67725d-6289-4fdd-85ee-2c3c98e78e50
+

@@ -1,0 +1,67 @@
+- defaultTab: nodes
+  description: "# Check Vlan Status\nWritten by: Osmar\n\nCheck Vlan Status within\
+    \ docker containers\n\n| Title| Data | \n| --- | --- | \n| Target Platform:| **OSS,PAOP,RBA**\
+    \ |\n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed or PAOP | \n\n\n\
+    **Distribution**\n\n`Supplied as-is for reference. No implied functionality or\
+    \ support for this example.`\n"
+  executionEnabled: false
+  group: 🛠 Network Configuration 🛠
+  id: febb7e06-d04b-446a-baf5-d4f4c31d69b8
+  loglevel: INFO
+  name: Check Docker VLAN Status
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Checking Vlan1
+      exec: docker exec 99a51289c17d ovs-ofctl dump-ports-desc vlan1
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: result1
+            regex: ^(.+)
+          type: key-value-data-multilines
+    - description: Checking Vlan50
+      exec: docker exec 99a51289c17d ovs-ofctl dump-ports-desc vlan50
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: result2
+            regex: ^(.+)
+          type: key-value-data-multilines
+    - description: Checking Vlan60
+      exec: docker exec 99a51289c17d ovs-ofctl dump-ports-desc vlan60
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: result3
+            regex: ^(.+)
+          type: key-value-data-multilines
+    - description: Checking br-foo
+      exec: docker exec 99a51289c17d ovs-ofctl dump-ports-desc br-foo
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: result4
+            regex: ^(.+)
+          type: key-value-data-multilines
+    keepgoing: false
+    strategy: node-first
+  tags: 'docker,network'
+  uuid: febb7e06-d04b-446a-baf5-d4f4c31d69b8
+

@@ -1,0 +1,77 @@
+- defaultTab: nodes
+  description: "\n#Trigger Azure Devops\nWritten by: Justyn Roberts\n\nA simple example\
+    \ of triggering an Github Actions pipeline from a Workflow.\nThis could be used\
+    \ as part of a remediation/rebuild flow\n\n\n\nThis could be used as a starter\
+    \ for more complex interactions.\n\n| Title| Data | \n| --- | --- | \n| Target\
+    \ Platform:| **OSS,PAOP,RBA** |\n\n\n|Assumptions:|\n| --- | \n| RBA has a Runner\
+    \ installed or PAOP | \n|The Bearer token is stored in the key store, and it should\
+    \ be easy to modify to add extra fields and options|\n**Distribution**\n\n`Supplied\
+    \ as-is for reference. No implied functionality or support for this example.`"
+  executionEnabled: false
+  group: 🛠 CD-CI Automation 🛠
+  id: 58afeaa6-1056-4cbe-a28a-d8a015c17ccb
+  loglevel: INFO
+  name: Trigger Github Actions
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      Enter your main repo or organisation name
+
+      eg mainapplication
+    label: Github repository Name
+    name: username
+    required: true
+  - description: |-
+      Enter your Repo name
+
+      eg myapplication
+    label: Github repository Name
+    name: repository
+    required: true
+  - description: |-
+      Enter your action name as a file
+      eg. blank.yml
+    label: Enter Action Name
+    name: action
+    required: true
+  - description: |-
+      Github key to use as authentication.
+      Example shows a personal access token
+    label: Github key - Stored in Vault.
+    name: key
+    secure: true
+    valueExposed: true
+  - description: |-
+      Enter a reference
+      (Must be valid, usually a branch eg Main)
+    label: reference (usually branch)
+    name: reference
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        body: '{"ref": "${option.reference}"}'
+        checkResponseCode: 'false'
+        headers: |-
+          {"Accept": "application/vnd.github+json",
+          "Authorization": "Bearer ${option.key}" }
+        method: POST
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://api.github.com/repos/${option.username}/${option.repository}/actions/workflows/${option.action}/dispatches
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Git Command to trigger Action
+      nodeStep: true
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    keepgoing: false
+    strategy: node-first
+  tags: github
+  uuid: 58afeaa6-1056-4cbe-a28a-d8a015c17ccb
+

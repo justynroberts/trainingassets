@@ -1,0 +1,72 @@
+- defaultTab: nodes
+  description: |
+    > Using options to grab user input
+
+    **Description:**
+    Options are variables in Process Automation<br>
+    An option can be used as user input or passed from as webhook payload<br>
+    This shows a basic example of three options, and how they are referenced in both commands and inline scripts<br>
+    The 3rd option shows a regex example, used to validate input <br>
+
+    **Assumptions:**
+
+     - RBA with Runner Installed OR Self Hosted (PAOP)
+     - Linux Tested
+
+    **Documentation:** [Job Options](https://docs.rundeck.com/docs/manual/job-options.html#job-options)
+  executionEnabled: true
+  group: 👣 Your First Steps in Automation 👣
+  id: 79e90b84-5adb-4285-be1f-9fb51250babf
+  loglevel: INFO
+  name: 3. Capturing Options
+  nodeFilterEditable: false
+  options:
+  - description: "The simple option allows a user to enter free form text into a reusable\
+      \ text variable.\nDefaults can be set easily\n\nThese options can be referenced\
+      \ in commands as\n${option.simple}\n\nor in scripts using  @option.simple@ "
+    label: Enter Disk Capacity (GB)
+    name: simple
+    value: '10'
+  - delimiter: ','
+    description: Options can be restricted to specific predetermined values.
+    enforced: true
+    label: List of available installable applications
+    multivalued: true
+    name: applicationlist
+    values:
+    - .Net 5.0
+    - Docker
+    - Jupyter
+    - NodeJS
+    - Python2.7
+    - Python3
+    valuesListDelimiter: ','
+  - description: |
+      A validated option ensures the entered value matches a predetermined pattern.
+    label: Users Email address in the format (name@domain.com)
+    name: validated
+    regex: '^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$'
+    required: true
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Simple Option Input
+      exec: echo "You chose "${option.simple}"GB Disk space
+    - description: Display all options
+      script: |-
+        echo "Provision the following applications"
+        echo "@option.applicationlist@"
+        echo "with @option.simple@ GB storage"
+        echo "to user with address: @option.validated@"
+    keepgoing: false
+    strategy: node-first
+  tags: first_steps
+  uuid: 79e90b84-5adb-4285-be1f-9fb51250babf
+

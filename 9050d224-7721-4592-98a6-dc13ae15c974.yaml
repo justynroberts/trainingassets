@@ -1,0 +1,83 @@
+- defaultTab: output
+  description: "\n# Check URL for availability, Run Troubleshooting\nWritten by: Chris\
+    \ Bell\n\nUse Curl to check URL\nRun troubleshooting steps\nUpdate PD (Optional).\
+    \ \n\n|Assumptions:|\n| --- | \n| RBA has a Runner installed or PAOP | \n| PD\
+    \ Key for Incident Update | \n| curl installed | \n| Linux Tested | \n\n**Distribution**\n\
+    \n`Supplied as-is for reference. No implied functionality or support for this\
+    \ example.`\n"
+  executionEnabled: false
+  group: 🏥 Response & Remediation 🏥
+  id: 9050d224-7721-4592-98a6-dc13ae15c974
+  loglevel: INFO
+  name: URL Health Check and Troubleshooting
+  nodeFilterEditable: false
+  options:
+  - description: The URL to check.
+    label: URL
+    name: url
+    value: pagerduty.com
+  - description: (Optional) Add a PagerDuty Incident ID to add the diagnostic output
+      of this Job to an Incident.
+    label: PagerDuty Incident ID
+    name: pd_incident_id
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Check URL with CURL
+      fileExtension: .sh
+      script: |-
+        #!/bin/bash
+        URL=@option.url@
+        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -L -I "$URL")
+        REDIRECT_URL=$(curl -s -L -I -o /dev/null -w '%{url_effective}' "$URL")
+
+        if [ $RESPONSE -eq 200 ]; then
+          echo "✅ URL is healthy: $RESPONSE"
+        elif [ $RESPONSE -eq 301 ]; then
+          echo "⚠️ URL is redirected: $RESPONSE"
+          echo "Redirected URL: $REDIRECT_URL"
+        else
+          echo "❌ URL is not healthy: $RESPONSE"
+          echo "Performing troubleshooting steps..."
+          echo "---"
+          echo "Traceroute:"
+          traceroute "$URL"
+          echo "---"
+          echo "NSLookup:"
+          nslookup "$URL"
+        fi
+    - configuration:
+        api_token: keys/project/PDT-Bell/pdt-bell-labs-key
+        email: rundeck@example.com
+        incident_id: ${option.pd_incident_id}
+        note: 'URL Health Check and Troubleshooting:\n\n${output}\n\nClick here for
+          more details: ${job.url}#output'
+      description: Send Diagnostics to PagerDuty
+      errorhandler:
+        configuration:
+          fail: 'false'
+          halt: 'true'
+          status: 'Please provide PagerDuty API token, User Email, and Incident ID
+            to send diagnostics to Incident.'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: flow-control
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'true'
+            logData: 'false'
+            name: pd-output
+            regex: (.*)
+          type: key-value-data-multilines
+      type: pd-note-step
+    keepgoing: false
+    strategy: node-first
+  tags: 'remediation,response,url'
+  uuid: 9050d224-7721-4592-98a6-dc13ae15c974
+
