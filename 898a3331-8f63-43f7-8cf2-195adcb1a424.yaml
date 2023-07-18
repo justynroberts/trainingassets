@@ -1,7 +1,7 @@
 - defaultTab: nodes
   description: ''
   executionEnabled: true
-  group: 👩🏻‍🎓 PagerDuty University 👩🏻‍🎓
+  group: '🐳 K8''s Management 🐳 '
   id: 898a3331-8f63-43f7-8cf2-195adcb1a424
   loglevel: INFO
   name: 'Kubernetes deployment - Deploy Grafana, Check Logs'
@@ -16,16 +16,32 @@
   schedules: []
   sequence:
     commands:
+    - description: Parse User Name (for Safety)
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: username
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        email="@job.username@"
+        formatted_email="${email%%@*}"
+        formatted_email=$(echo "$formatted_email" | tr -d '\n')
+
+        echo "$formatted_email"
     - description: Create Namespace
       errorhandler:
-        exec: kubectl delete namespace ${job.username} && kubectl create namespace
-          ${job.username}
+        exec: kubectl delete namespace ${data.username} && kubectl create namespace
+          ${data.username}
         keepgoingOnSuccess: true
-      exec: kubectl create namespace ${job.username}
+      exec: kubectl create namespace ${data.username}
     - configuration:
         debug: 'false'
         interpreter: python3
-        namespace: ${job.username}
+        namespace: ${data.username}
         type: PersistentVolumeClaim
         verify_ssl: 'false'
         yaml: |-
@@ -45,7 +61,7 @@
     - configuration:
         debug: 'false'
         interpreter: python3
-        namespace: ${job.username}
+        namespace: ${data.username}
         type: Deployment
         verify_ssl: 'false'
         yaml: |-
@@ -111,7 +127,7 @@
     - configuration:
         debug: 'false'
         interpreter: python3
-        namespace: ${job.username}
+        namespace: ${data.username}
         type: Service
         verify_ssl: 'false'
         yaml: |-
@@ -133,7 +149,7 @@
       type: Kubernetes-Create
     - exec: kubectl get namespaces
     - description: Get Pod
-      exec: 'kubectl get pods -n ${job.username} --no-headers -o custom-columns=":metadata.name" '
+      exec: 'kubectl get pods -n ${data.username} --no-headers -o custom-columns=":metadata.name" '
       plugins:
         LogFilter:
         - config:
@@ -150,7 +166,7 @@
         echo $podname
 
         podname=$(echo $podname | sed 's/n$//')
-        kubectl logs --tail=20 $podname -n @job.username@
+        kubectl logs --tail=20 $podname -n @data.username@
     keepgoing: false
     strategy: node-first
   uuid: 898a3331-8f63-43f7-8cf2-195adcb1a424
