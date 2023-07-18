@@ -6,7 +6,7 @@
     \ or PAOP | \n| Kubectl Installed, with sufficient access | \n|jq installed|\n\
     \n\n**Distribution**\n\n`Supplied as-is for reference. No implied functionality\
     \ or support for this example.`\n"
-  executionEnabled: false
+  executionEnabled: true
   group: '🐳 K8''s Management 🐳 '
   id: b68a4793-8cf6-4e72-8175-5b003b45fbf5
   loglevel: INFO
@@ -14,6 +14,10 @@
   nodeFilterEditable: false
   plugins:
     ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
   scheduleEnabled: true
   schedules: []
   sequence:
