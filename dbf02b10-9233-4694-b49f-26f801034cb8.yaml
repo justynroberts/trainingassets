@@ -1,0 +1,53 @@
+- defaultTab: nodes
+  description: Some additional jobs for PagerDuty University
+  executionEnabled: true
+  group: 👩🏻‍🎓 PagerDuty University 👩🏻‍🎓
+  id: dbf02b10-9233-4694-b49f-26f801034cb8
+  loglevel: INFO
+  name: Multi Node Examples
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    canChange: true
+    runnerFilterMode: LOCAL
+    runnerFilterType: LOCAL_RUNNER
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        method: GET
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://dummyjson.com/products
+        sslVerify: 'true'
+        timeout: '30000'
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            filter: .products
+            logData: 'true'
+          type: json-mapper
+      type: edu.ohio.ais.rundeck.HttpWorkflowNodeStepPlugin
+    - configuration:
+        jsonArray: ${data.product_title}
+        printIterationData: 'false'
+        script: |-
+          name=$vars.name
+
+          echo "ID: $id"
+        scriptInterpreter: echo ${scriptfile}
+        stopIterationOnFailure: 'false'
+      nodeStep: true
+      type: iterate-json-script-nodestep-plugin
+    keepgoing: false
+    strategy: node-first
+  tags: pdu
+  uuid: dbf02b10-9233-4694-b49f-26f801034cb8
+

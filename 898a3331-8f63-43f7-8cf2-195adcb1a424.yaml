@@ -1,0 +1,157 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: 👩🏻‍🎓 PagerDuty University 👩🏻‍🎓
+  id: 898a3331-8f63-43f7-8cf2-195adcb1a424
+  loglevel: INFO
+  name: 'Kubernetes deployment - Deploy Grafana, Check Logs'
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  runnerSelector:
+    filter: WORKSHOP
+    runnerFilterMode: TAGS
+    runnerFilterType: TAG_FILTER_AND
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: Create Namespace
+      errorhandler:
+        exec: kubectl delete namespace ${job.username} && kubectl create namespace
+          ${job.username}
+        keepgoingOnSuccess: true
+      exec: kubectl create namespace ${job.username}
+    - configuration:
+        debug: 'false'
+        interpreter: python3
+        namespace: ${job.username}
+        type: PersistentVolumeClaim
+        verify_ssl: 'false'
+        yaml: |-
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: grafana-pvc
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+      description: PVC
+      nodeStep: true
+      type: Kubernetes-Create
+    - configuration:
+        debug: 'false'
+        interpreter: python3
+        namespace: ${job.username}
+        type: Deployment
+        verify_ssl: 'false'
+        yaml: |-
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            labels:
+              app: grafana
+            name: grafana
+          spec:
+            selector:
+              matchLabels:
+                app: grafana
+            template:
+              metadata:
+                labels:
+                  app: grafana
+              spec:
+                securityContext:
+                  fsGroup: 472
+                  supplementalGroups:
+                    - 0
+                containers:
+                  - name: grafana
+                    image: grafana/grafana:9.1.0
+                    imagePullPolicy: IfNotPresent
+                    ports:
+                      - containerPort: 3000
+                        name: http-grafana
+                        protocol: TCP
+                    readinessProbe:
+                      failureThreshold: 3
+                      httpGet:
+                        path: /robots.txt
+                        port: 3000
+                        scheme: HTTP
+                      initialDelaySeconds: 10
+                      periodSeconds: 30
+                      successThreshold: 1
+                      timeoutSeconds: 2
+                    livenessProbe:
+                      failureThreshold: 3
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                      successThreshold: 1
+                      tcpSocket:
+                        port: 3000
+                      timeoutSeconds: 1
+                    resources:
+                      requests:
+                        cpu: 250m
+                        memory: 750Mi
+                    volumeMounts:
+                      - mountPath: /var/lib/grafana
+                        name: grafana-pv
+                volumes:
+                  - name: grafana-pv
+                    persistentVolumeClaim:
+                      claimName: grafana-pvc
+      description: Deployment
+      nodeStep: true
+      type: Kubernetes-Create
+    - configuration:
+        debug: 'false'
+        interpreter: python3
+        namespace: ${job.username}
+        type: Service
+        verify_ssl: 'false'
+        yaml: |-
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: grafana
+          spec:
+            ports:
+              - port: 3000
+                protocol: TCP
+                targetPort: http-grafana
+            selector:
+              app: grafana
+            sessionAffinity: None
+            type: LoadBalancer
+      description: Service
+      nodeStep: true
+      type: Kubernetes-Create
+    - exec: kubectl get namespaces
+    - description: Get Pod
+      exec: 'kubectl get pods -n ${job.username} --no-headers -o custom-columns=":metadata.name" '
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'true'
+            name: podname
+            regex: (.*)
+          type: key-value-data-multilines
+    - description: Get Logs
+      script: |-
+        #!/bin/bash
+        podname=@data.podname@
+        echo $podname
+
+        podname=$(echo $podname | sed 's/n$//')
+        kubectl logs --tail=20 $podname -n @job.username@
+    keepgoing: false
+    strategy: node-first
+  uuid: 898a3331-8f63-43f7-8cf2-195adcb1a424
+
