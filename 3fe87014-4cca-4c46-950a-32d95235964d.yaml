@@ -1,0 +1,80 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Workshop
+  id: 3fe87014-4cca-4c46-950a-32d95235964d
+  loglevel: INFO
+  name: System Configuration
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: "AWS Node.js"'
+  nodesSelectedByDefault: true
+  options:
+  - hidden: true
+    label: API Token
+    name: api_token
+    required: true
+    secure: true
+    storagePath: keys/project/PDT-Cfischer/PagerDuty-API-Key
+    valueExposed: true
+  - label: Incident ID
+    name: pd_incident_id
+    required: true
+  - label: PD User
+    name: pd_user
+  plugins:
+    ExecutionLifecycle:
+      resume: {}
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - description: CPU Memory
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'false'
+            name: cpumemory
+            regex: ^(.+)
+          type: key-value-data-multilines
+      script: |-
+        #!/bin/bash
+        echo -e "------CPU/Memory Usage-------"
+        echo -e "Memory Usage:\t"`free | awk '/Mem/{printf("%.2f%"), $3/$2*100}'`
+        echo -e "CPU Usage:\t"`cat /proc/stat | awk '/cpu/{printf("%.2f%\n"), ($2+$4)*100/($2+$4+$5)}' |  awk '{print $0}' | head -1`
+    - description: Disk Usage
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'false'
+            name: diskusage
+            regex: ^(.+)
+          type: key-value-data-multilines
+      script: |+
+        #!/bin/bash
+        echo ""
+        echo -e "-------Disk Usage >80%-------"
+        df -Ph | sed s/%//g | awk '{ if($5 > 80) print $0;}'
+
+    - configuration:
+        api_token: keys/project/PDT-Cfischer/PagerDuty-API-Key
+        email: ${option.pd_user}
+        incident_id: ${option.pd_incident_id}
+        note: '${data.cpumemory*}\n${data.diskusage*}\n\nProcess Automation URL: ${job.url}#show'
+      description: Update PagerDuty notes
+      nodeStep: false
+      type: pd-note-step
+    keepgoing: false
+    strategy: sequential
+  uuid: 3fe87014-4cca-4c46-950a-32d95235964d
+

@@ -1,0 +1,69 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Workshop
+  id: 9b6bfadd-2b0a-4633-aeb7-de6baaa5c16b
+  loglevel: INFO
+  name: Send event to PagerDuty
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: "AWS Node.js"'
+  nodesSelectedByDefault: true
+  options:
+  - label: Routing Key
+    name: routing_key
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  schedules: []
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        body: "{\n\t\t\t\t\"payload\": {\n\t\t\t\t\t    \"summary\": \"Online services\
+          \ have stopped working\",\n                        \"severity\": \"critical\"\
+          ,\n                        \"source\": \"shop.sportstation.com\",\n    \
+          \                    \"component\": \"nodejs\",\n                      \
+          \  \"group\": \"shopping\",\n                        \"class\": \"web\"\
+          ,\n                        \"custom_details\": {\n                     \
+          \       \"error\": \"Online services have stopped working\",\n         \
+          \                   \"hostname\": \"ec2-54-162-93-190.compute-1.amazonaws.com\"\
+          ,\n                            \"AWSinstanceID\": \"i-0be56fed6734c4cc1\"\
+          ,\n                            \"container\": \"jovial_galois\"\n      \
+          \                  }\n\t\t\t\t\t},\n\t\t\t\t\"routing_key\": \"${option.routing_key}\"\
+          ,\n\t\t\t\t\"event_action\": \"trigger\"\n             }"
+        checkResponseCode: 'false'
+        headers: |-
+          {
+          "Content-type": "application/json; charset=UTF-8";
+          }
+        method: POST
+        printResponse: 'true'
+        printResponseCode: 'false'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://events.pagerduty.com/v2/enqueue
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Send event
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            filter: '.notes[] | {content: .content} | select(.content | startswith
+              ("itsm_incident_id"))'
+            logData: 'true'
+            prefix: result
+          type: json-mapper
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 9b6bfadd-2b0a-4633-aeb7-de6baaa5c16b
+
